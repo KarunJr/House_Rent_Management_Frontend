@@ -17,7 +17,8 @@ export default function TabTwoScreen() {
         <IconSymbol
           size={310}
           color="#808080"
-          name="chevron.left.forwardslash.chevron.right"
+          name="house.fill"
+          // name="chevron.left.forwardslash.chevron.right"
           style={styles.headerImage}
         />
       }>
@@ -75,7 +76,7 @@ export default function TabTwoScreen() {
           <ThemedText type="link">Learn more</ThemedText>
         </ExternalLink>
       </Collapsible>
-      <Collapsible title="Animations">
+      <Collapsible title="Karun">
         <ThemedText>
           This template includes an example of an animated component. The{' '}
           <ThemedText type="defaultSemiBold">components/HelloWave.tsx</ThemedText> component uses
@@ -86,7 +87,7 @@ export default function TabTwoScreen() {
           library to create a waving hand animation.
         </ThemedText>
         {Platform.select({
-          ios: (
+          android: (
             <ThemedText>
               The <ThemedText type="defaultSemiBold">components/ParallaxScrollView.tsx</ThemedText>{' '}
               component provides a parallax effect for the header image.
