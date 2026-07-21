@@ -1,21 +1,40 @@
-import React, { useState } from 'react';
 import { Fonts } from '@/constants/theme';
+import { LoginSchema } from '@/validation/auth.validation';
+import { zodResolver } from '@hookform/resolvers/zod';
+import React from 'react';
+import { Controller, useForm } from 'react-hook-form';
 import {
+  Button,
   Image,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-  TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
+import * as z from 'zod';
+
+type LoginFormData = z.infer<typeof LoginSchema>;
 
 export default function Login() {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const {
+    control,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(LoginSchema),
+    defaultValues: {
+      usernameOrEmail: '',
+      password: '',
+    },
+  });
 
+  const onSubmit = async (data: LoginFormData) => {
+    console.log('Valid login payload:', data);
+  };
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -36,36 +55,57 @@ export default function Login() {
           {/* Form Section */}
           <View style={styles.formContainer}>
             <View style={styles.inputGroup}>
-              <TextInput
-                style={styles.inputbox}
-                placeholder="Email/Username"
-                placeholderTextColor="#A0A0A0"
-                value={username}
-                onChangeText={setUsername}
-                autoCapitalize="none"
+              <Controller
+                control={control}
+                name="usernameOrEmail"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <TextInput
+                    style={styles.inputbox}
+                    placeholder="Username or Email"
+                    onBlur={onBlur}
+                    onChangeText={onChange}
+                    value={value}
+                    autoCapitalize="none"
+                  />
+                )}
               />
+              {errors.usernameOrEmail && (
+                <Text style={styles.errorText}>{errors.usernameOrEmail.message}</Text>
+              )}
             </View>
 
             <View style={styles.inputGroup}>
-              <TextInput
-                style={styles.inputbox}
-                placeholder="Password"
-                placeholderTextColor="#A0A0A0"
-                secureTextEntry
-                value={password}
-                onChangeText={setPassword}
-                autoCapitalize="none"
+              <Controller
+                control={control}
+                name="password"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <TextInput
+                    style={styles.inputbox}
+                    placeholder="Password"
+                    onBlur={onBlur}
+                    onChangeText={onChange}
+                    value={value}
+                    autoCapitalize="none"
+                    secureTextEntry
+                  />
+                )}
               />
+              {errors.password && <Text style={styles.errorText}>{errors.password.message}</Text>}
             </View>
 
             {/* Login Button */}
-            <TouchableOpacity
+            <Button
+              title={isSubmitting ? 'Submitting...' : 'Login'}
+              onPress={handleSubmit(onSubmit)}
+              disabled={isSubmitting}
+            />
+            {/* <TouchableOpacity
               style={styles.button}
               activeOpacity={0.8}
               onPress={() => console.log('Logging in...', { username, password })}
             >
               <Text style={styles.buttonText}>Log In</Text>
-            </TouchableOpacity>
+            </TouchableOpacity> */}
 
             <View style={styles.registerView}>
               <Text style={styles.registerText}>Don&#39;t have an account? </Text>
@@ -133,6 +173,7 @@ const styles = StyleSheet.create({
     color: '#000',
     backgroundColor: '#FAFAFA',
   },
+  errorText: { color: 'red', fontSize: 12, marginTop: 2 },
   button: {
     backgroundColor: '#007AFF',
     padding: 16,
