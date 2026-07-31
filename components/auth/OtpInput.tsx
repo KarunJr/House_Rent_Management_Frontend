@@ -1,42 +1,26 @@
-import React, { useRef, useState, useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  View,
-  TextInput,
-  StyleSheet,
   NativeSyntheticEvent,
-  TextInputKeyPressEventData,
-  useColorScheme,
   Platform,
   StyleProp,
+  StyleSheet,
+  TextInput,
+  TextInputKeyPressEventData,
+  View,
   ViewStyle,
 } from 'react-native';
 
 export type OtpStatus = 'idle' | 'verifying' | 'error' | 'success';
 
-// -----------------------------------------------------------------------------
-// Theme tokens — swap for your app's theme.ts when finalized.
-// -----------------------------------------------------------------------------
-const palette = {
-  light: {
-    background: '#F5F5F7',
-    boxBackground: '#FFFFFF',
-    border: '#E1E1E6',
-    borderFocused: '#3B82F6',
-    borderError: '#FF3B30',
-    borderSuccess: '#34C759',
-    text: '#1C1C1E',
-    disabledText: '#8E8E93',
-  },
-  dark: {
-    background: '#1C1C1E',
-    boxBackground: '#2C2C2E',
-    border: '#3A3A3C',
-    borderFocused: '#5B9DFF',
-    borderError: '#FF453A',
-    borderSuccess: '#30D158',
-    text: '#F2F2F7',
-    disabledText: '#8E8E93',
-  },
+const colors = {
+  background: '#F5F5F7',
+  boxBackground: '#FFFFFF',
+  border: '#E1E1E6',
+  borderFocused: '#3B82F6',
+  borderError: '#FF3B30',
+  borderSuccess: '#34C759',
+  text: '#1C1C1E',
+  disabledText: '#8E8E93',
 };
 
 export interface OtpInputProps {
@@ -62,7 +46,7 @@ export interface OtpInputProps {
   boxSize?: number;
 }
 
-const OtpInput: React.FC<OtpInputProps> = ({
+const OtpInput = ({
   length = 6,
   onComplete,
   onChange,
@@ -71,21 +55,16 @@ const OtpInput: React.FC<OtpInputProps> = ({
   status = 'idle',
   style,
   boxSize = 48,
-}) => {
-  const scheme = useColorScheme();
-  const colors = palette[scheme === 'dark' ? 'dark' : 'light'];
+}: OtpInputProps) => {
 
   const [digits, setDigits] = useState<string[]>(
     () =>
-      value
-        ?.split('')
-        .slice(0, length)
-        .concat(Array(length).fill(''))
-        .slice(0, length) ?? Array(length).fill('')
+      value?.split('').slice(0, length).concat(Array(length).fill('')).slice(0, length) ??
+      Array(length).fill(''),
   );
   const [focusedIndex, setFocusedIndex] = useState<number>(-1);
 
-  const inputRefs = useRef<Array<TextInput | null>>([]);
+  const inputRefs = useRef<(TextInput | null)[]>([]);
   const lastCompletedCode = useRef<string>('');
 
   useEffect(() => {
@@ -147,10 +126,7 @@ const OtpInput: React.FC<OtpInputProps> = ({
     }
   };
 
-  const handleKeyPress = (
-    e: NativeSyntheticEvent<TextInputKeyPressEventData>,
-    index: number
-  ) => {
+  const handleKeyPress = (e: NativeSyntheticEvent<TextInputKeyPressEventData>, index: number) => {
     if (e.nativeEvent.key !== 'Backspace') return;
     if (digits[index]) {
       const next = [...digits];

@@ -1,6 +1,6 @@
 import OtpInput, { OtpStatus } from '@/components/auth/OtpInput';
-import { useRouter } from 'expo-router';
-import React, { useRef, useState } from 'react';
+// import { useRouter } from 'expo-router';
+import React, { useEffect, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
 const CORRECT_CODE = '123456'; // demo only — replace with your real check
@@ -19,15 +19,17 @@ const colors = {
 };
 
 export default function VerifyOtp() {
-  const router = useRouter();
+  // const router = useRouter();
 
   const [code, setCode] = useState('');
   const [status, setStatus] = useState<OtpStatus>('idle');
   const resetTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
-  const phoneNumberMasked = '+628 123******';
+  const RESET_SECONDS = 10;
+  const [timer, setTimer] = useState<number>(RESET_SECONDS);
+  const [canResend, setCanResend] = useState<boolean>(false);
 
-  const handleComplete = (otp: string) => {
+  const handleVerifyOtp = (otp: string) => {
     setStatus('verifying');
 
     // Replace this block with your real API call, e.g.:
@@ -36,7 +38,7 @@ export default function VerifyOtp() {
       if (otp === CORRECT_CODE) {
         setStatus('success');
         // give the user a beat to see the green "Accepted" state, then move on
-        setTimeout(() => router.replace('/login'), 700);
+        // setTimeout(() => router.replace('/login'), 700);
       } else {
         setStatus('error');
       }
@@ -46,6 +48,9 @@ export default function VerifyOtp() {
   const handleResend = () => {
     setCode('');
     setStatus('idle');
+
+    setTimer(RESET_SECONDS);
+    setCanResend(false);
     // trigger your resend-code API call here
   };
 
@@ -61,7 +66,20 @@ export default function VerifyOtp() {
   const statusColor =
     status === 'error' ? colors.error : status === 'success' ? colors.success : colors.subtext;
 
-  const canContinue = code.length === 6 && status !== 'verifying';
+  const canConfirm = code.length === 6 && status !== 'verifying';
+
+  useEffect(() => {
+    if (timer === 0) {
+      setCanResend(true);
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setTimer((prev) => prev - 1);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [timer]);
 
   return (
     <KeyboardAvoidingView
@@ -71,15 +89,14 @@ export default function VerifyOtp() {
       <View style={styles.content}>
         <Text style={[styles.title, { color: colors.text }]}>Verify account with OTP</Text>
 
-        <Text style={[styles.subtitle, { color: colors.subtext }]}>
-          We&#39;ve sent a 6-digit code to {phoneNumberMasked}
-        </Text>
+        <Text style={[{ color: colors.subtext }]}>We&#39;ve sent the verfification code</Text>
+        <Text style={[styles.subtitle, { color: colors.subtext }]}>to your email address</Text>
 
         <OtpInput
           length={6}
           value={code}
           onChange={setCode}
-          onComplete={handleComplete}
+          onComplete={handleVerifyOtp}
           status={status}
           style={styles.otpRow}
         />
@@ -88,44 +105,43 @@ export default function VerifyOtp() {
           <Text style={[styles.statusText, { color: statusColor }]}>{statusMessage}</Text>
         )}
 
-        {status === 'error' && (
-          <Pressable onPress={handleResend} hitSlop={8}>
-            <Text style={[styles.resendText, { color: colors.link }]}>Resend code</Text>
-          </Pressable>
-        )}
-      </View>
-
-      <View style={styles.footer}>
         <Pressable
-          disabled={!canContinue}
-          onPress={() => handleComplete(code)}
+          disabled={!canConfirm}
+          onPress={() => handleVerifyOtp(code)}
           style={[
-            styles.continueButton,
+            styles.confirmButton,
             {
-              backgroundColor: canContinue ? colors.buttonActiveBg : colors.buttonDisabledBg,
+              backgroundColor: canConfirm ? colors.buttonActiveBg : colors.buttonDisabledBg,
             },
           ]}
         >
           <Text
             style={[
-              styles.continueText,
+              styles.confirmText,
               {
-                color: canContinue ? colors.buttonActiveText : colors.buttonDisabledText,
+                color: canConfirm ? colors.buttonActiveText : colors.buttonDisabledText,
               },
             ]}
           >
-            Continue
+            Confirm
           </Text>
         </Pressable>
 
-        <Text style={[styles.termsText, { color: colors.subtext }]}>
-          By entering your number you agree to our{'\n'}
-          <Text style={[styles.termsLink, { color: colors.text }]}>Terms & Privacy Policy</Text>
-        </Text>
+        <View style={styles.resendContent}>
+          <Text style={[{ color: colors.subtext }]}>Didn&#39;t receive code?</Text>
+          {canResend ? (
+            <Pressable onPress={handleResend} hitSlop={8}>
+              <Text style={[styles.resendText, { color: colors.link }]}>Resend code</Text>
+            </Pressable>
+          ) : (
+              <Text style={[styles.resendText, { color: colors.link }]}>Resend in {timer}s</Text>
+          )}
+        </View>
       </View>
     </KeyboardAvoidingView>
   );
 }
+
 const styles = StyleSheet.create({
   flex: {
     flex: 1,
@@ -157,12 +173,18 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginTop: 14,
   },
+  resendContent: {
+    marginTop: 14,
+    // flexDirection: 'row',
+    // justifyContent: 'center',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 4,
+  },
 
   resendText: {
     fontSize: 13,
     fontWeight: '600',
-    marginTop: 8,
-    textDecorationLine: 'underline',
   },
 
   footer: {
@@ -171,15 +193,16 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
 
-  continueButton: {
+  confirmButton: {
     height: 52,
     borderRadius: 26,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 14,
+    marginTop: 18,
+    // marginBottom: 14,
   },
 
-  continueText: {
+  confirmText: {
     fontSize: 16,
     fontWeight: '600',
   },
