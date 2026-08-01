@@ -56,7 +56,6 @@ const OtpInput = ({
   style,
   boxSize = 48,
 }: OtpInputProps) => {
-
   const [digits, setDigits] = useState<string[]>(
     () =>
       value?.split('').slice(0, length).concat(Array(length).fill('')).slice(0, length) ??
@@ -87,7 +86,7 @@ const OtpInput = ({
         lastCompletedCode.current = '';
       }
     },
-    [length, onChange, onComplete]
+    [length, onChange, onComplete],
   );
 
   const focusInput = (index: number) => {

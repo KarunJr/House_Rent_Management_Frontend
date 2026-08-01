@@ -1,4 +1,5 @@
 import OtpInput, { OtpStatus } from '@/components/auth/OtpInput';
+import { useLocalSearchParams } from 'expo-router';
 // import { useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
@@ -20,7 +21,7 @@ const colors = {
 
 export default function VerifyOtp() {
   // const router = useRouter();
-
+  const { email } = useLocalSearchParams<{ email: string }>();
   const [code, setCode] = useState('');
   const [status, setStatus] = useState<OtpStatus>('idle');
   const resetTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -28,6 +29,7 @@ export default function VerifyOtp() {
   const RESET_SECONDS = 10;
   const [timer, setTimer] = useState<number>(RESET_SECONDS);
   const [canResend, setCanResend] = useState<boolean>(false);
+  console.log(email);
 
   const handleVerifyOtp = (otp: string) => {
     setStatus('verifying');
@@ -134,7 +136,7 @@ export default function VerifyOtp() {
               <Text style={[styles.resendText, { color: colors.link }]}>Resend code</Text>
             </Pressable>
           ) : (
-              <Text style={[styles.resendText, { color: colors.link }]}>Resend in {timer}s</Text>
+            <Text style={[styles.resendText, { color: colors.link }]}>Resend in {timer}s</Text>
           )}
         </View>
       </View>

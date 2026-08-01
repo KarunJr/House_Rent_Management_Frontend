@@ -1,4 +1,5 @@
 import AuthHeader from '@/components/auth/AuthHeader';
+import { handleError } from '@/helpers/axios.error';
 import { register } from '@/service/auth.service';
 import { authStyles as styles } from '@/styles/auth.styles';
 import { RegisterFormData, RegisterSchema } from '@/validation/auth.validation';
@@ -7,6 +8,7 @@ import { router } from 'expo-router';
 import React from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import {
+  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -35,9 +37,25 @@ export default function Register() {
   const onSubmit = async (data: RegisterFormData) => {
     try {
       console.log('Valid login payload:', data);
-      await register(data);
+      const result = await register(data);
+      console.log(result);
+      console.log(result.createdUser);
+
+      if (result.emailSent) {
+        router.push({
+          pathname: '/(auth)/verifyotp',
+          params: {
+            email: 'test',
+            // email: result.createdUser.email,
+          },
+        });
+      }
     } catch (error) {
-      console.log(error);
+      const apiError = handleError(error);
+
+      Alert.alert('Error', apiError.message);
+
+      console.log(apiError);
     }
   };
   return (
