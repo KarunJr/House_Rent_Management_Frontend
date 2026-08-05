@@ -1,10 +1,10 @@
 import OtpInput, { OtpStatus } from '@/components/auth/OtpInput';
-import { useLocalSearchParams } from 'expo-router';
-// import { useRouter } from 'expo-router';
-import React, { useEffect, useRef, useState } from 'react';
+import { toast } from '@/components/toast';
+import { handleError } from '@/helpers/axios.error';
+import { resnedOtp, verifyEmail } from '@/service/auth.service';
+import { router, useLocalSearchParams } from 'expo-router';
+import React, { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
-
-const CORRECT_CODE = '123456'; // demo only — replace with your real check
 
 const colors = {
   background: '#FFFFFF',
@@ -20,41 +20,15 @@ const colors = {
 };
 
 export default function VerifyOtp() {
-  // const router = useRouter();
-  const { email } = useLocalSearchParams<{ email: string }>();
+  const RESET_SECONDS = 60;
+
   const [code, setCode] = useState('');
   const [status, setStatus] = useState<OtpStatus>('idle');
-  const resetTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-
-  const RESET_SECONDS = 10;
+  const [resendCount, setResendCount] = useState<number>(0);
   const [timer, setTimer] = useState<number>(RESET_SECONDS);
   const [canResend, setCanResend] = useState<boolean>(false);
-  console.log(email);
 
-  const handleVerifyOtp = (otp: string) => {
-    setStatus('verifying');
-
-    // Replace this block with your real API call, e.g.:
-    // const res = await api.post('/auth/verify-otp', { code: otp });
-    resetTimer.current = setTimeout(() => {
-      if (otp === CORRECT_CODE) {
-        setStatus('success');
-        // give the user a beat to see the green "Accepted" state, then move on
-        // setTimeout(() => router.replace('/login'), 700);
-      } else {
-        setStatus('error');
-      }
-    }, 900);
-  };
-
-  const handleResend = () => {
-    setCode('');
-    setStatus('idle');
-
-    setTimer(RESET_SECONDS);
-    setCanResend(false);
-    // trigger your resend-code API call here
-  };
+  const { email } = useLocalSearchParams<{ email: string }>();
 
   const statusMessage =
     status === 'error'
@@ -69,6 +43,62 @@ export default function VerifyOtp() {
     status === 'error' ? colors.error : status === 'success' ? colors.success : colors.subtext;
 
   const canConfirm = code.length === 6 && status !== 'verifying';
+
+  const handleVerifyOtp = async (otp: string) => {
+    if (!email) {
+      console.error('Email is missing from route parameters.');
+      toast.warning('Please restart the verification process.', {
+        title: 'Email Address Missing',
+      });
+      return;
+    }
+    try {
+      setStatus('verifying');
+      const response = await verifyEmail({ email, otp });
+      if (response.success) {
+        setStatus('success');
+        router.replace('/explore');
+      } else {
+        setStatus('error');
+      }
+    } catch (error) {
+      setStatus('idle');
+      const apiError = handleError(error);
+      toast.error(apiError.message, {
+        title: 'Please try again later',
+      });
+      console.error(apiError);
+    }
+  };
+
+  const handleResend = async () => {
+    setResendCount(resendCount + 1);
+    if (resendCount > 4) {
+      return toast.info('Too many attempts', { title: 'Please try again later' });
+    }
+    setCode('');
+    setStatus('idle');
+    setTimer(RESET_SECONDS);
+    setCanResend(false);
+    try {
+      const result = await resnedOtp({ email });
+      if (result.emailSent) {
+        toast.info('Check your inbox to continue.', {
+          title: 'Verification Email Sent!',
+        });
+      } else {
+        toast.info(result.message);
+        router.push('/(auth)/login');
+      }
+    } catch (error) {
+      const apiError = handleError(error);
+      toast.error(apiError.message, {
+        title: 'Please try again later',
+      });
+      setCanResend(false);
+      console.log(apiError);
+    }
+  };
 
   useEffect(() => {
     if (timer === 0) {

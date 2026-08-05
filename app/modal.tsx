@@ -1,7 +1,8 @@
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { toast } from '@/components/toast';
 import { Link } from 'expo-router';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity } from 'react-native';
 
 export default function ModalScreen() {
   return (
@@ -10,6 +11,15 @@ export default function ModalScreen() {
       <Link href="/" dismissTo style={styles.link}>
         <ThemedText type="link">Go to home screen</ThemedText>
       </Link>
+      <TouchableOpacity
+        onPress={() =>
+          toast.error('Please try again later ', {
+            title: 'An internal error occurred during registration.',
+          })
+        }
+      >
+        <Text>Hello</Text>
+      </TouchableOpacity>
     </ThemedView>
   );
 }

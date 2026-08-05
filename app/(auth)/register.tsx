@@ -1,4 +1,5 @@
 import AuthHeader from '@/components/auth/AuthHeader';
+import { toast } from '@/components/toast';
 import { handleError } from '@/helpers/axios.error';
 import { register } from '@/service/auth.service';
 import { authStyles as styles } from '@/styles/auth.styles';
@@ -8,7 +9,6 @@ import { router } from 'expo-router';
 import React from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -33,7 +33,6 @@ export default function Register() {
       phone: '',
     },
   });
-
   const onSubmit = async (data: RegisterFormData) => {
     try {
       console.log('Valid login payload:', data);
@@ -42,19 +41,24 @@ export default function Register() {
       console.log(result.createdUser);
 
       if (result.emailSent) {
+        toast.info('Check your inbox to continue.', {
+          title: 'Verification Email Sent!',
+        });
         router.push({
           pathname: '/(auth)/verifyotp',
           params: {
-            email: 'test',
-            // email: result.createdUser.email,
+            email: result.createdUser.email,
           },
         });
+      } else {
+        toast.info(result.message);
+        router.push('/(auth)/login');
       }
     } catch (error) {
       const apiError = handleError(error);
-
-      Alert.alert('Error', apiError.message);
-
+      toast.error(apiError.message, {
+        title: 'Please try again later',
+      });
       console.log(apiError);
     }
   };
