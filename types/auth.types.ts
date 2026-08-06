@@ -17,13 +17,25 @@ export interface VerifyEmailData {
 }
 
 export interface VerifyEmailResponse {
+  success: boolean;
   message: string;
+  createdUser: UserResponseDto;
+  token: string;
 }
 
 export interface ResendOtpData {
   email: string;
 }
+
 export interface ResendOtpResponse {
   message: string;
   emailSent: boolean;
+}
+
+export interface LoginResponse {
+  success: boolean;
+  message: string;
+  user?: UserResponseDto;
+  emailVerified?: boolean;
+  token?: string;
 }

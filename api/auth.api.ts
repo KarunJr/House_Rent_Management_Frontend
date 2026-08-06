@@ -10,10 +10,10 @@ export const verifyEmailApi = <T>(data: VerifyEmailData) => {
   return api.post<T>('/v1/api/auth/verify-email', data);
 };
 
-export const resnedOtpApi = <T>(data: ResendOtpData) => {
+export const resendOtpApi = <T>(data: ResendOtpData) => {
   return api.post<T>('/v1/api/auth/resend-otp', data);
 };
 
-export const loginApi = (data: LoginFormData) => {
-  return api.post('/v1/api/auth/login', data);
+export const loginApi = <T>(data: LoginFormData) => {
+  return api.post<T>('/v1/api/auth/login', data);
 };

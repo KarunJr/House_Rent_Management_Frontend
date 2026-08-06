@@ -1,12 +1,13 @@
-import { registerApi, resnedOtpApi, verifyEmailApi } from '@/api/auth.api';
+import { loginApi, registerApi, resendOtpApi, verifyEmailApi } from '@/api/auth.api';
 import {
+  LoginResponse,
   ResendOtpData,
   ResendOtpResponse,
   UserRegistrationResponse,
   VerifyEmailData,
+  VerifyEmailResponse,
 } from '@/types/auth.types';
-import { ApiSuccessResponse } from '@/types/global.types';
-import { RegisterFormData } from '@/validation/auth.validation';
+import { LoginFormData, RegisterFormData } from '@/validation/auth.validation';
 
 export async function register(data: RegisterFormData) {
   const response = await registerApi<UserRegistrationResponse>(data);
@@ -14,16 +15,16 @@ export async function register(data: RegisterFormData) {
 }
 
 export async function verifyEmail(data: VerifyEmailData) {
-  const response = await verifyEmailApi<ApiSuccessResponse>(data);
+  const response = await verifyEmailApi<VerifyEmailResponse>(data);
   return response.data;
 }
 
-export async function resnedOtp(data: ResendOtpData) {
-  const response = await resnedOtpApi<ResendOtpResponse>(data);
+export async function resendOtp(data: ResendOtpData) {
+  const response = await resendOtpApi<ResendOtpResponse>(data);
   return response.data;
 }
-// export async function login(data: LoginFormData) {
-//   const response = await loginApi(data);
 
-//   const token = await SecureStore.setItemAsync(response.data.);
-// }
+export async function login(data: LoginFormData) {
+  const response = await loginApi<LoginResponse>(data);
+  return response.data;
+}

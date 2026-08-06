@@ -1,4 +1,7 @@
 import AuthHeader from '@/components/auth/AuthHeader';
+import { toast } from '@/components/toast';
+import { handleError } from '@/helpers/axios.error';
+import { login } from '@/service/auth.service';
 import { authStyles as styles } from '@/styles/auth.styles';
 import { LoginFormData, LoginSchema } from '@/validation/auth.validation';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -29,7 +32,31 @@ export default function Login() {
   });
 
   const onSubmit = async (data: LoginFormData) => {
-    console.log('Valid login payload:', data);
+    try {
+      const result = await login(data);
+      if (result.success && result.token) {
+        toast.success(result.message || 'Logged in successfully');
+        router.replace('/(tabs)/explore');
+        return;
+      }
+      if (result.emailVerified === false) {
+        toast.warning(result.message || 'Please verify your email');
+        router.push({
+          pathname: '/(auth)/verifyotp',
+          params: {
+            email: result.user?.email
+          }
+        });
+        return;
+      }
+      toast.error(result.message || 'Invalid credentials');
+    } catch (error) {
+      const apiError = handleError(error);
+
+      toast.error(apiError.message, {
+        title: 'Please try again later',
+      });
+    }
   };
   return (
     <KeyboardAvoidingView

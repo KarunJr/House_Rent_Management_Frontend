@@ -1,10 +1,14 @@
-import OtpInput, { OtpStatus } from '@/components/auth/OtpInput';
-import { toast } from '@/components/toast';
-import { handleError } from '@/helpers/axios.error';
-import { resnedOtp, verifyEmail } from '@/service/auth.service';
 import { router, useLocalSearchParams } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
 import React, { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+
+import OtpInput, { OtpStatus } from '@/components/auth/OtpInput';
+import { toast } from '@/components/toast';
+
+import { handleError } from '@/helpers/axios.error';
+
+import { resendOtp, verifyEmail } from '@/service/auth.service';
 
 const colors = {
   background: '#FFFFFF',
@@ -57,6 +61,8 @@ export default function VerifyOtp() {
       const response = await verifyEmail({ email, otp });
       if (response.success) {
         setStatus('success');
+        toast.success(response.message, { title: 'Welcome to HouseRent.' });
+        await SecureStore.setItemAsync('accessToken', response.token);
         router.replace('/explore');
       } else {
         setStatus('error');
@@ -81,7 +87,7 @@ export default function VerifyOtp() {
     setTimer(RESET_SECONDS);
     setCanResend(false);
     try {
-      const result = await resnedOtp({ email });
+      const result = await resendOtp({ email });
       if (result.emailSent) {
         toast.info('Check your inbox to continue.', {
           title: 'Verification Email Sent!',
@@ -112,6 +118,17 @@ export default function VerifyOtp() {
 
     return () => clearInterval(interval);
   }, [timer]);
+
+  useEffect(() => {
+    if (!email) {
+      router.replace('/(auth)/login');
+    }
+  }, [email]);
+
+  if (!email) {
+    router.replace('/(auth)/login');
+    return null;
+  }
 
   return (
     <KeyboardAvoidingView
