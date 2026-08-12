@@ -126,7 +126,6 @@ export default function VerifyOtp() {
   }, [email]);
 
   if (!email) {
-    router.replace('/(auth)/login');
     return null;
   }
 

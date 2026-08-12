@@ -44,8 +44,8 @@ export default function Login() {
       const result = await login(data);
       if (result.success && result.token) {
         toast.success(result.message || 'Logged in successfully');
-        router.replace('/(tabs)/explore');
         await SecureStore.setItemAsync('accessToken', result.token);
+        router.replace('/(tabs)/explore');
         return;
       }
       if (result.emailVerified === false) {

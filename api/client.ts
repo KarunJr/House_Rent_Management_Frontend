@@ -16,7 +16,7 @@ const apiClient = create({
 apiClient.interceptors.request.use(
   async (config) => {
     try {
-      const token = await SecureStore.getItemAsync('token');
+      const token = await SecureStore.getItemAsync('accessToken');
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
