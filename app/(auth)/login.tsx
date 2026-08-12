@@ -1,75 +1,157 @@
-import React, { useState } from 'react';
-import { Fonts } from '@/constants/theme';
+import { useState } from 'react';
 import {
-  Image,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-  TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
-export default function Login() {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+import { router } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
 
+import { Controller, useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { LoginFormData, LoginSchema } from '@/validation/auth.validation';
+
+import AuthHeader from '@/components/auth/AuthHeader';
+import { toast } from '@/components/toast';
+import { authStyles as styles } from '@/styles/auth.styles';
+
+import { login } from '@/service/auth.service';
+import { handleError } from '@/helpers/axios.error';
+import { IconSymbol } from '@/components/ui/icon-symbol';
+
+export default function Login() {
+  const [isSecure, setIsSecure] = useState<boolean>(false);
+  const {
+    control,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(LoginSchema),
+    defaultValues: {
+      usernameOrEmail: '',
+      password: '',
+    },
+  });
+
+  const onSubmit = async (data: LoginFormData) => {
+    try {
+      const result = await login(data);
+      if (result.success && result.token) {
+        toast.success(result.message || 'Logged in successfully');
+        await SecureStore.setItemAsync('accessToken', result.token);
+        router.replace('/(tabs)/explore');
+        return;
+      }
+      if (result.emailVerified === false) {
+        toast.warning(result.message || 'Please verify your email');
+        router.push({
+          pathname: '/(auth)/verifyotp',
+          params: {
+            email: result.user?.email,
+          },
+        });
+        return;
+      }
+      toast.error(result.message || 'Invalid credentials');
+    } catch (error) {
+      const apiError = handleError(error);
+
+      toast.error(apiError.message, {
+        title: 'Please try again later',
+      });
+    }
+  };
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={{ flex: 1 }}
     >
-      <ScrollView contentContainerStyle={styles.scrollContainer} bounces={false}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContainer}
+        bounces={false}
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={styles.container}>
           {/* Header Section */}
-          <View style={styles.header}>
-            <Image
-              style={styles.logo}
-              source={require('../../assets/images/house-rent-logo.png')}
-            />
-            <Text style={styles.heading}>Welcome to Rentify</Text>
-            <Text style={styles.subheading}>Login to continue</Text>
-          </View>
+          <AuthHeader
+            imageSource={require('../../assets/images/house-rent-logo.png')}
+            heading="Welcome to Rentify"
+            subheading="Login to continue"
+          />
 
           {/* Form Section */}
           <View style={styles.formContainer}>
             <View style={styles.inputGroup}>
-              <TextInput
-                style={styles.inputbox}
-                placeholder="Email/Username"
-                placeholderTextColor="#A0A0A0"
-                value={username}
-                onChangeText={setUsername}
-                autoCapitalize="none"
+              <Controller
+                control={control}
+                name="usernameOrEmail"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <TextInput
+                    autoFocus
+                    style={styles.inputbox}
+                    autoCorrect={false}
+                    placeholder="Username or Email"
+                    onBlur={onBlur}
+                    onChangeText={onChange}
+                    value={value}
+                    autoCapitalize="none"
+                  />
+                )}
               />
+              {errors.usernameOrEmail && (
+                <Text style={styles.errorText}>{errors.usernameOrEmail.message}</Text>
+              )}
             </View>
 
             <View style={styles.inputGroup}>
-              <TextInput
-                style={styles.inputbox}
-                placeholder="Password"
-                placeholderTextColor="#A0A0A0"
-                secureTextEntry
-                value={password}
-                onChangeText={setPassword}
-                autoCapitalize="none"
-              />
+              <View style={styles.passwordContainer}>
+                <Controller
+                  control={control}
+                  name="password"
+                  render={({ field: { onChange, onBlur, value } }) => (
+                    <TextInput
+                      style={styles.inputboxPassword}
+                      autoCorrect={false}
+                      placeholder="Password"
+                      onBlur={onBlur}
+                      onChangeText={onChange}
+                      value={value}
+                      autoCapitalize="none"
+                      textContentType="password"
+                      autoComplete="password"
+                      secureTextEntry={isSecure}
+                    />
+                  )}
+                />
+                <Pressable
+                  style={styles.eyeButton}
+                  onPress={() => setIsSecure((prev) => !prev)}
+                  hitSlop={100}
+                >
+                  <IconSymbol name={isSecure ? 'eye.slash' : 'eye'} size={20} color="#666" />
+                </Pressable>
+              </View>
+              {errors.password && <Text style={styles.errorText}>{errors.password.message}</Text>}
             </View>
 
-            {/* Login Button */}
             <TouchableOpacity
-              style={styles.button}
+              style={[styles.button, isSubmitting && { opacity: 0.7 }]}
               activeOpacity={0.8}
-              onPress={() => console.log('Logging in...', { username, password })}
+              onPress={handleSubmit(onSubmit)}
+              disabled={isSubmitting}
             >
-              <Text style={styles.buttonText}>Log In</Text>
+              <Text style={styles.buttonText}>{isSubmitting ? 'Submitting...' : 'Login'}</Text>
             </TouchableOpacity>
 
             <View style={styles.registerView}>
               <Text style={styles.registerText}>Don&#39;t have an account? </Text>
-              <TouchableOpacity onPress={() => console.log('Navigate to register')}>
+              <TouchableOpacity onPress={() => router.push('/(auth)/register')}>
                 <Text style={styles.registerLink}>Register</Text>
               </TouchableOpacity>
             </View>
@@ -79,94 +161,3 @@ export default function Login() {
     </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  scrollContainer: {
-    flexGrow: 1,
-    backgroundColor: '#FFF',
-  },
-  container: {
-    flex: 1,
-    paddingHorizontal: 24,
-    justifyContent: 'center',
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 32,
-  },
-  logo: {
-    width: 90,
-    height: 90,
-    resizeMode: 'contain',
-  },
-  heading: {
-    fontSize: 28,
-    fontWeight: '700',
-    fontFamily: Fonts.sans,
-    color: '#1A1A1A',
-    marginBottom: 6,
-  },
-  subheading: {
-    fontSize: 15,
-    fontFamily: Fonts.sans,
-    color: '#666',
-  },
-  formContainer: {
-    width: '100%',
-    gap: 16,
-  },
-  inputGroup: {
-    gap: 6,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    fontFamily: Fonts.sans,
-    color: '#333',
-  },
-  inputbox: {
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    borderRadius: 10,
-    padding: 14,
-    fontSize: 16,
-    color: '#000',
-    backgroundColor: '#FAFAFA',
-  },
-  button: {
-    backgroundColor: '#007AFF',
-    padding: 16,
-    borderRadius: 10,
-    alignItems: 'center',
-    marginTop: 10,
-    shadowColor: '#007AFF',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  buttonText: {
-    color: '#FFF',
-    fontSize: 16,
-    fontWeight: '600',
-    fontFamily: Fonts.sans,
-  },
-
-  registerView: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  registerText: {
-    fontSize: 14,
-    color: '#666',
-    fontFamily: Fonts.sans,
-  },
-  registerLink: {
-    fontSize: 14,
-    color: '#007AFF',
-    fontWeight: '600',
-    fontFamily: Fonts.sans,
-  },
-});
