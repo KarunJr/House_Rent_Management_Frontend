@@ -1,3 +1,15 @@
+import { useState } from 'react';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+
 import AuthHeader from '@/components/auth/AuthHeader';
 import { toast } from '@/components/toast';
 import { handleError } from '@/helpers/axios.error';
@@ -6,19 +18,11 @@ import { authStyles as styles } from '@/styles/auth.styles';
 import { RegisterFormData, RegisterSchema } from '@/validation/auth.validation';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { router } from 'expo-router';
-import React from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import {
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { IconSymbol } from '@/components/ui/icon-symbol';
 
 export default function Register() {
+  const [isSecure, setIsSecure] = useState<boolean>(false);
   const {
     control,
     handleSubmit,
@@ -67,7 +71,11 @@ export default function Register() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={{ flex: 1 }}
     >
-      <ScrollView contentContainerStyle={styles.scrollContainer} bounces={false}>
+      <ScrollView 
+        contentContainerStyle={styles.scrollContainer} 
+        bounces={false}
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={styles.container}>
           {/* Header Section */}
           <AuthHeader
@@ -143,28 +151,37 @@ export default function Register() {
 
             {/* Password Field */}
             <View style={styles.inputGroup}>
-              <Controller
-                control={control}
-                name="password"
-                render={({ field: { onChange, onBlur, value } }) => (
-                  <TextInput
-                    style={styles.inputbox}
-                    autoCorrect={false}
-                    placeholder="Password"
-                    onBlur={onBlur}
-                    onChangeText={onChange}
-                    value={value}
-                    autoCapitalize="none"
-                    textContentType="newPassword"
-                    autoComplete="password-new"
-                    secureTextEntry
-                  />
-                )}
-              />
+              <View style={styles.passwordContainer}>
+                <Controller
+                  control={control}
+                  name="password"
+                  render={({ field: { onChange, onBlur, value } }) => (
+                    <TextInput
+                      style={styles.inputboxPassword}
+                      autoCorrect={false}
+                      placeholder="Password"
+                      onBlur={onBlur}
+                      onChangeText={onChange}
+                      value={value}
+                      autoCapitalize="none"
+                      textContentType="newPassword"
+                      autoComplete="password-new"
+                      secureTextEntry={isSecure}
+                    />
+                  )}
+                />
+                <Pressable
+                  style={styles.eyeButton}
+                  onPress={() => setIsSecure((prev) => !prev)}
+                  hitSlop={100}
+                >
+                  <IconSymbol name={isSecure ? 'eye.slash' : 'eye'} size={20} color="#666" />
+                </Pressable>
+              </View>
               {errors.password && <Text style={styles.errorText}>{errors.password.message}</Text>}
             </View>
 
-            {/* Password Field */}
+            {/* Phone Field */}
             <View style={styles.inputGroup}>
               <Controller
                 control={control}

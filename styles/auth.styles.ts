@@ -33,6 +33,26 @@ export const authStyles = StyleSheet.create({
     color: '#000',
     backgroundColor: '#FAFAFA',
   },
+  passwordContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 10,
+    backgroundColor: '#FAFAFA',
+  },
+  inputboxPassword: {
+    flex: 1,
+    padding: 14,
+    fontSize: 16,
+    color: '#000',
+    backgroundColor: 'transparent', // Inherits background from passwordContainer
+  },
+  eyeButton: {
+    paddingHorizontal: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   errorText: { color: 'red', fontSize: 12, marginTop: 2 },
   button: {
     backgroundColor: '#007AFF',

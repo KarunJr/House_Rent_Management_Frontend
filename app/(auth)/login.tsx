@@ -1,16 +1,8 @@
-import AuthHeader from '@/components/auth/AuthHeader';
-import { toast } from '@/components/toast';
-import { handleError } from '@/helpers/axios.error';
-import { login } from '@/service/auth.service';
-import { authStyles as styles } from '@/styles/auth.styles';
-import { LoginFormData, LoginSchema } from '@/validation/auth.validation';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { router } from 'expo-router';
-import React from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import { useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   ScrollView,
   Text,
   TextInput,
@@ -18,7 +10,23 @@ import {
   View,
 } from 'react-native';
 
+import { router } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
+
+import { Controller, useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { LoginFormData, LoginSchema } from '@/validation/auth.validation';
+
+import AuthHeader from '@/components/auth/AuthHeader';
+import { toast } from '@/components/toast';
+import { authStyles as styles } from '@/styles/auth.styles';
+
+import { login } from '@/service/auth.service';
+import { handleError } from '@/helpers/axios.error';
+import { IconSymbol } from '@/components/ui/icon-symbol';
+
 export default function Login() {
+  const [isSecure, setIsSecure] = useState<boolean>(false);
   const {
     control,
     handleSubmit,
@@ -37,6 +45,7 @@ export default function Login() {
       if (result.success && result.token) {
         toast.success(result.message || 'Logged in successfully');
         router.replace('/(tabs)/explore');
+        await SecureStore.setItemAsync('accessToken', result.token);
         return;
       }
       if (result.emailVerified === false) {
@@ -44,8 +53,8 @@ export default function Login() {
         router.push({
           pathname: '/(auth)/verifyotp',
           params: {
-            email: result.user?.email
-          }
+            email: result.user?.email,
+          },
         });
         return;
       }
@@ -65,6 +74,7 @@ export default function Login() {
     >
       <ScrollView
         contentContainerStyle={styles.scrollContainer}
+        bounces={false}
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.container}>
@@ -100,24 +110,33 @@ export default function Login() {
             </View>
 
             <View style={styles.inputGroup}>
-              <Controller
-                control={control}
-                name="password"
-                render={({ field: { onChange, onBlur, value } }) => (
-                  <TextInput
-                    style={styles.inputbox}
-                    autoCorrect={false}
-                    placeholder="Password"
-                    onBlur={onBlur}
-                    onChangeText={onChange}
-                    value={value}
-                    autoCapitalize="none"
-                    textContentType="password"
-                    autoComplete="password"
-                    secureTextEntry
-                  />
-                )}
-              />
+              <View style={styles.passwordContainer}>
+                <Controller
+                  control={control}
+                  name="password"
+                  render={({ field: { onChange, onBlur, value } }) => (
+                    <TextInput
+                      style={styles.inputboxPassword}
+                      autoCorrect={false}
+                      placeholder="Password"
+                      onBlur={onBlur}
+                      onChangeText={onChange}
+                      value={value}
+                      autoCapitalize="none"
+                      textContentType="password"
+                      autoComplete="password"
+                      secureTextEntry={isSecure}
+                    />
+                  )}
+                />
+                <Pressable
+                  style={styles.eyeButton}
+                  onPress={() => setIsSecure((prev) => !prev)}
+                  hitSlop={100}
+                >
+                  <IconSymbol name={isSecure ? 'eye.slash' : 'eye'} size={20} color="#666" />
+                </Pressable>
+              </View>
               {errors.password && <Text style={styles.errorText}>{errors.password.message}</Text>}
             </View>
 
