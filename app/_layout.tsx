@@ -1,3 +1,5 @@
+import '../global.css';
+
 import { ToastProvider } from '@/components/toast';
 import { Stack } from 'expo-router';
 import 'react-native-reanimated';
