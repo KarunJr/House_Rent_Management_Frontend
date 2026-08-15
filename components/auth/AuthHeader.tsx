@@ -1,5 +1,5 @@
 import { Fonts } from '@/constants/theme';
-import { Image, ImageSourcePropType, StyleSheet, Text, View } from 'react-native';
+import { Image, ImageSourcePropType, Text, View } from 'react-native';
 
 interface AuthHeaderProps {
   imageSource: ImageSourcePropType;
@@ -9,34 +9,22 @@ interface AuthHeaderProps {
 
 export default function AuthHeader({ imageSource, heading, subheading }: AuthHeaderProps) {
   return (
-    <View style={styles.header}>
-      <Image style={styles.logo} source={imageSource} />
-      <Text style={styles.heading}>{heading}</Text>
-      <Text style={styles.subheading}>{subheading}</Text>
+    <View className="mb-6 items-center">
+      <Image className="mb-5 h-12 w-24" resizeMode="contain" source={imageSource} />
+
+      <Text
+        className="text-center text-3xl font-bold text-[#1A1A1A]"
+        style={{ fontFamily: Fonts.sans }}
+      >
+        {heading}
+      </Text>
+
+      <Text
+        className="mt-2 text-center text-base text-[#666666]"
+        style={{ fontFamily: Fonts.sans }}
+      >
+        {subheading}
+      </Text>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  header: {
-    alignItems: 'center',
-    marginBottom: 32,
-  },
-  logo: {
-    width: 90,
-    height: 90,
-    resizeMode: 'contain',
-  },
-  heading: {
-    fontSize: 28,
-    fontWeight: '700',
-    fontFamily: Fonts.sans,
-    color: '#1A1A1A',
-    marginBottom: 6,
-  },
-  subheading: {
-    fontSize: 15,
-    fontFamily: Fonts.sans,
-    color: '#666',
-  },
-});
