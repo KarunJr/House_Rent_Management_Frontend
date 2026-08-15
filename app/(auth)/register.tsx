@@ -12,8 +12,8 @@ import {
 
 import { router } from 'expo-router';
 
-import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Controller, useForm } from 'react-hook-form';
 
 import AuthHeader from '@/components/auth/AuthHeader';
 import { toast } from '@/components/toast';
@@ -88,7 +88,6 @@ export default function Register() {
         contentContainerClassName="grow px-6 py-10"
         bounces={false}
         keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="interactive"
       >
         <View className="flex-1 justify-center">
           {/* Header Section */}
@@ -211,7 +210,9 @@ export default function Register() {
                 <Pressable
                   className="items-center justify-center px-4"
                   onPress={() => setIsSecure((prev) => !prev)}
-                  hitSlop={100}
+                  hitSlop={10}
+                  accessibilityRole="button"
+                  accessibilityLabel={isSecure ? 'Show password' : 'Hide password'}
                 >
                   <IconSymbol name={isSecure ? 'eye.slash' : 'eye'} size={21} color="#666" />
                 </Pressable>

@@ -84,7 +84,6 @@ export default function Login() {
         contentContainerClassName="grow px-6 py-10"
         bounces={false}
         keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="interactive"
       >
         <View className="flex-1 justify-center">
           {/* Header Section */}
@@ -151,7 +150,9 @@ export default function Login() {
                 <Pressable
                   className="items-center justify-center px-4"
                   onPress={() => setIsSecure((prev) => !prev)}
-                  hitSlop={100}
+                  hitSlop={10}
+                  accessibilityRole="button"
+                  accessibilityLabel={isSecure ? 'Show password' : 'Hide password'}
                 >
                   <IconSymbol name={isSecure ? 'eye.slash' : 'eye'} size={21} color="#666" />
                 </Pressable>
