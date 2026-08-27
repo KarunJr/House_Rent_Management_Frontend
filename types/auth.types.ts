@@ -37,5 +37,6 @@ export interface LoginResponse {
   message: string;
   user?: UserResponseDto;
   emailVerified?: boolean;
+  emailSent?: boolean;
   token?: string;
 }

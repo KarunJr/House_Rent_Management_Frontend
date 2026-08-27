@@ -1,17 +1,14 @@
 import * as z from 'zod';
 
 export const RegisterSchema = z.object({
-  name: z
-    .string()
-    .trim()
-    .min(1, { error: 'Name is required' }),
+  name: z.string().trim().min(1, { error: 'Name is required' }),
 
   username: z
     .string()
     .trim()
     .min(1, { error: 'Username is required' })
-    .regex(/^[a-zA-Z0-9\-._@+]+$/, { 
-      error: 'Username contains invalid characters' 
+    .regex(/^[a-zA-Z0-9\-._@+]+$/, {
+      error: 'Username contains invalid characters',
     }),
 
   email: z
@@ -31,19 +28,16 @@ export const RegisterSchema = z.object({
   phone: z
     .string()
     .trim()
-    .regex(/^\+?[1-9]\d{1,14}$/, { error: 'Invalid phone number format' }),
+    .regex(/^(\+977)?[9][6-9]\d{8}$/, {
+      message: 'Invalid Nepali mobile number format',
+    }),
 });
 
 export const LoginSchema = z.object({
-  usernameOrEmail: z
-    .string()
-    .trim()
-    .min(1, { error: 'Username or Email is required' }),
+  usernameOrEmail: z.string().trim().min(1, { error: 'Username or Email is required' }),
 
-  password: z
-    .string()
-    .min(1, { error: 'Password is required' }),
+  password: z.string().min(1, { error: 'Password is required' }),
 });
 
-export type RegisterFormData = z.infer<typeof RegisterSchema>
-export type LoginFormData = z.infer<typeof LoginSchema>
+export type RegisterFormData = z.infer<typeof RegisterSchema>;
+export type LoginFormData = z.infer<typeof LoginSchema>;
