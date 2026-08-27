@@ -52,7 +52,7 @@ export default function Login() {
         return;
       }
 
-      if (result.emailVerified === false) {
+      if (result.emailSent === true && result.emailVerified === false) {
         toast.warning(result.message || 'Please verify your email');
         router.push({
           pathname: '/(auth)/verifyotp',
@@ -60,6 +60,11 @@ export default function Login() {
             email: result.user?.email,
           },
         });
+        return;
+      }
+
+      if (result.emailSent === false) {
+        toast.warning(result.message || 'Please verify your email');
         return;
       }
 
