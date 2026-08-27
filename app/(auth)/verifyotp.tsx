@@ -63,7 +63,7 @@ export default function VerifyOtp() {
         setStatus('success');
         toast.success(response.message, { title: 'Welcome to HouseRent.' });
         await SecureStore.setItemAsync('accessToken', response.token);
-        router.replace('/explore');
+        router.replace('/(tabs)/home');
       } else {
         setStatus('error');
       }
