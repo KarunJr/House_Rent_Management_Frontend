@@ -1,5 +1,4 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import * as SecureStore from 'expo-secure-store';
 import React, { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -8,7 +7,7 @@ import { toast } from '@/components/toast';
 
 import { handleError } from '@/helpers/axios.error';
 
-import { resendOtp, verifyEmail } from '@/service/auth.service';
+import { useAuthStore } from '@/store/auth.store';
 
 const colors = {
   background: '#FFFFFF',
@@ -48,6 +47,9 @@ export default function VerifyOtp() {
 
   const canConfirm = code.length === 6 && status !== 'verifying';
 
+  const verifyEmail = useAuthStore((state) => state.verifyEmail);
+  const resendOtp = useAuthStore((state) => state.resendOtp);
+
   const handleVerifyOtp = async (otp: string) => {
     if (!email) {
       console.error('Email is missing from route parameters.');
@@ -62,8 +64,7 @@ export default function VerifyOtp() {
       if (response.success) {
         setStatus('success');
         toast.success(response.message, { title: 'Welcome to HouseRent.' });
-        await SecureStore.setItemAsync('accessToken', response.token);
-        router.replace('/(tabs)/home');
+        return;
       } else {
         setStatus('error');
       }
