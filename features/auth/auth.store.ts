@@ -1,7 +1,4 @@
-import { create } from 'zustand';
-import * as SecureStore from 'expo-secure-store';
-import { LoginFormData, RegisterFormData } from '@/validation/auth.validation';
-import { loginApi, registerApi, resendOtpApi, verifyEmailApi } from '@/api/auth.api';
+import { loginApi, registerApi, resendOtpApi, verifyEmailApi } from '@/features/auth/auth.api';
 import {
   LoginResponse,
   ResendOtpData,
@@ -10,7 +7,10 @@ import {
   UserResponseDto,
   VerifyEmailData,
   VerifyEmailResponse,
-} from '@/types/auth.types';
+} from '@/features/auth/auth.types';
+import { LoginFormData, RegisterFormData } from '@/features/auth/auth.validation';
+import * as SecureStore from 'expo-secure-store';
+import { create } from 'zustand';
 interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;

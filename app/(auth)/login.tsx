@@ -12,22 +12,22 @@ import {
 
 import { router } from 'expo-router';
 
-import { LoginFormData, LoginSchema } from '@/validation/auth.validation';
+import { LoginFormData, LoginSchema } from '@/features/auth/auth.validation';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Controller, useForm } from 'react-hook-form';
 
-import AuthHeader from '@/components/auth/AuthHeader';
 import { toast } from '@/components/toast';
+import AuthHeader from '@/features/auth/components/AuthHeader';
 
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { handleError } from '@/helpers/axios.error';
 
 import { Fonts } from '@/constants/theme';
-import { useAuthStore } from '@/store/auth.store';
+import { useAuthStore } from '@/features/auth/auth.store';
 
 export default function Login() {
   const [isSecure, setIsSecure] = useState<boolean>(true);
-  const login = useAuthStore((state)=> state.login);
+  const login = useAuthStore((state) => state.login);
   const {
     control,
     handleSubmit,

@@ -1,4 +1,4 @@
-import { useAuthStore } from '@/store/auth.store';
+import { useAuthStore } from '@/features/auth/auth.store';
 import '../global.css';
 
 import { ToastProvider } from '@/components/toast';

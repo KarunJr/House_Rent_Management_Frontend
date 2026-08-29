@@ -2,12 +2,12 @@ import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import OtpInput, { OtpStatus } from '@/components/auth/OtpInput';
 import { toast } from '@/components/toast';
+import OtpInput, { OtpStatus } from '@/features/auth/components/OtpInput';
 
 import { handleError } from '@/helpers/axios.error';
 
-import { useAuthStore } from '@/store/auth.store';
+import { useAuthStore } from '@/features/auth/auth.store';
 
 const colors = {
   background: '#FFFFFF',
