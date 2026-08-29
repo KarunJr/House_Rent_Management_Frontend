@@ -1,6 +1,6 @@
-import { ResendOtpData, VerifyEmailData } from '@/types/auth.types';
-import { LoginFormData, RegisterFormData } from '@/validation/auth.validation';
-import api from './client';
+import { ResendOtpData, VerifyEmailData } from '@/features/auth/auth.types';
+import { LoginFormData, RegisterFormData } from '@/features/auth/auth.validation';
+import api from '../../lib/client';
 
 export const registerApi = <T>(data: RegisterFormData) => {
   return api.post<T>('/v1/api/auth/register', data);

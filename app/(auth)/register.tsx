@@ -15,18 +15,18 @@ import { router } from 'expo-router';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Controller, useForm } from 'react-hook-form';
 
-import AuthHeader from '@/components/auth/AuthHeader';
 import { toast } from '@/components/toast';
+import { RegisterFormData, RegisterSchema } from '@/features/auth/auth.validation';
+import AuthHeader from '@/features/auth/components/AuthHeader';
 import { handleError } from '@/helpers/axios.error';
-import { register } from '@/service/auth.service';
-import { RegisterFormData, RegisterSchema } from '@/validation/auth.validation';
 
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Fonts } from '@/constants/theme';
+import { useAuthStore } from '@/features/auth/auth.store';
 
 export default function Register() {
   const [isSecure, setIsSecure] = useState<boolean>(true);
-
+  const register = useAuthStore((state) => state.register);
   const {
     control,
     handleSubmit,
@@ -44,12 +44,7 @@ export default function Register() {
 
   const onSubmit = async (data: RegisterFormData) => {
     try {
-      console.log('Valid login payload:', data);
-
       const result = await register(data);
-
-      console.log(result);
-      console.log(result.createdUser);
 
       if (result.emailSent) {
         toast.info('Check your inbox to continue.', {

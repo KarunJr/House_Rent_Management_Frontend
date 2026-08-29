@@ -11,24 +11,23 @@ import {
 } from 'react-native';
 
 import { router } from 'expo-router';
-import * as SecureStore from 'expo-secure-store';
 
-import { LoginFormData, LoginSchema } from '@/validation/auth.validation';
+import { LoginFormData, LoginSchema } from '@/features/auth/auth.validation';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Controller, useForm } from 'react-hook-form';
 
-import AuthHeader from '@/components/auth/AuthHeader';
 import { toast } from '@/components/toast';
+import AuthHeader from '@/features/auth/components/AuthHeader';
 
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { handleError } from '@/helpers/axios.error';
-import { login } from '@/service/auth.service';
 
 import { Fonts } from '@/constants/theme';
+import { useAuthStore } from '@/features/auth/auth.store';
 
 export default function Login() {
   const [isSecure, setIsSecure] = useState<boolean>(true);
-
+  const login = useAuthStore((state) => state.login);
   const {
     control,
     handleSubmit,
@@ -47,8 +46,6 @@ export default function Login() {
 
       if (result.success && result.token) {
         toast.success(result.message || 'Logged in successfully');
-        await SecureStore.setItemAsync('accessToken', result.token);
-        router.replace('/(tabs)/explore');
         return;
       }
 
