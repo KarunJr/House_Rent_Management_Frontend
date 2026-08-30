@@ -24,12 +24,21 @@ export function Avatar({ uri, name, size = 44 }: AvatarProps) {
   if (!uri || failed) {
     return (
       <View
-        style={dimension}
-        className="items-center justify-center bg-terracotta-soft"
+        style={{
+          ...dimension,
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: '#FDE7DA',
+          borderWidth: 1,
+          borderColor: '#F4CBB5',
+        }}
       >
         <Text
-          className="font-body-semibold text-terracotta-deep"
-          style={{ fontSize: size * 0.38 }}
+          style={{
+            color: '#8A3B12',
+            fontSize: size * 0.38,
+            fontWeight: '700',
+          }}
         >
           {getInitials(name)}
         </Text>
