@@ -1,13 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import {
-  ImageBackground,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { ImageBackground, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { BillInvoice, Payment, RoomWithDetails } from '../home.types';
@@ -63,15 +56,15 @@ const getAccentColor = (status: RoomWithDetails['status']) => {
   }
 };
 
-const getBadgeStatus = (room: RoomWithDetails) => {
-  if (room.status === 'MAINTENANCE') return 'maintenance' as const;
-  if (room.status === 'AVAILABLE' || room.active_lease === null) return 'vacant' as const;
-  if (room.current_invoice?.status === 'PAID') return 'paid' as const;
-  if (room.current_invoice?.status === 'PARTIAL') return 'partial' as const;
-  if (room.current_invoice?.status === 'OVERDUE') return 'overdue' as const;
-  if (room.current_invoice?.status === 'CANCELLED') return 'cancelled' as const;
-  return 'pending' as const;
-};
+// const getBadgeStatus = (room: RoomWithDetails) => {
+//   if (room.status === 'MAINTENANCE') return 'maintenance' as const;
+//   if (room.status === 'AVAILABLE' || room.active_lease === null) return 'vacant' as const;
+//   if (room.current_invoice?.status === 'PAID') return 'paid' as const;
+//   if (room.current_invoice?.status === 'PARTIAL') return 'partial' as const;
+//   if (room.current_invoice?.status === 'OVERDUE') return 'overdue' as const;
+//   if (room.current_invoice?.status === 'CANCELLED') return 'cancelled' as const;
+//   return 'pending' as const;
+// };
 
 const paymentTone = (status: BillInvoice['status']) => {
   switch (status) {
@@ -141,10 +134,6 @@ export default function RoomDetailScreen({
   const isMaintenance = room.status === 'MAINTENANCE';
   const heroImage = ROOM_IMAGES[room.floor.floor_number] ?? ROOM_IMAGES[1];
   const currentRent = room.active_lease?.monthly_rent ?? room.base_rent_amount;
-  const badgeStatus = getBadgeStatus(room);
-  const currentInvoice = room.current_invoice;
-  const currentPayment =
-    currentInvoice ? payments.find((payment) => payment.invoice_id === currentInvoice.id) ?? null : null;
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
@@ -152,15 +141,25 @@ export default function RoomDetailScreen({
         <ScrollView
           contentContainerStyle={{
             paddingTop: 8,
-            paddingBottom: isVacant ? Math.max(insets.bottom + 24, 32) : Math.max(insets.bottom + 96, 118),
+            paddingBottom: isVacant
+              ? Math.max(insets.bottom + 24, 32)
+              : Math.max(insets.bottom + 96, 118),
           }}
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.content}>
             <View style={styles.heroShell}>
-              <ImageBackground source={{ uri: heroImage }} style={styles.heroImage} imageStyle={styles.heroImageBorder}>
+              <ImageBackground
+                source={{ uri: heroImage }}
+                style={styles.heroImage}
+                imageStyle={styles.heroImageBorder}
+              >
                 <LinearGradient
-                  colors={['rgba(15, 23, 42, 0.66)', 'rgba(15, 23, 42, 0.1)', 'rgba(15, 23, 42, 0)']}
+                  colors={[
+                    'rgba(15, 23, 42, 0.66)',
+                    'rgba(15, 23, 42, 0.1)',
+                    'rgba(15, 23, 42, 0)',
+                  ]}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 0, y: 1 }}
                   style={StyleSheet.absoluteFillObject}
@@ -195,31 +194,23 @@ export default function RoomDetailScreen({
                     value={String(room.floor.floor_number)}
                     label="Floor"
                   />
-                  <SpecItem
-                    icon="person-outline"
-                    value={isVacant ? '0' : '1'}
-                    label="Tenant"
-                  />
-                  <SpecItem
+                  <SpecItem icon="person-outline" value={isVacant ? '0' : '1'} label="Tenant" />
+                  {/* <SpecItem
                     icon="document-text-outline"
                     value={currentInvoice ? formatMonthYear(currentInvoice.billing_month).split(' ')[0] : 'No'}
                     label="Invoice"
-                  />
+                  /> */}
                   <View style={styles.rentBlock}>
                     <Text style={styles.rentAmount}>{formatCurrency(currentRent)}</Text>
                     <Text style={styles.rentSuffix}>/mo</Text>
                   </View>
                 </View>
 
-                <Text style={styles.descriptionText}>
-                  {isMaintenance
-                    ? 'This room is temporarily unavailable while service work is being completed.'
-                    : isVacant
-                      ? 'This room is currently vacant and ready to be assigned to a new tenant.'
-                      : `Occupied by ${room.tenant?.name ?? 'the current tenant'} with an active lease since ${formatShortDate(
-                          room.active_lease!.start_date,
-                        )}.`}
-                </Text>
+                {isMaintenance && (
+                  <Text style={styles.descriptionText}>
+                    This room is temporarily unavailable while service work is being completed.
+                  </Text>
+                )}
               </View>
             </View>
 
@@ -262,7 +253,9 @@ export default function RoomDetailScreen({
 
                     <Pressable style={[styles.secondaryAction, { borderColor: accentColor }]}>
                       <Ionicons name="chatbubble-outline" size={16} color={accentColor} />
-                      <Text style={[styles.secondaryActionText, { color: accentColor }]}>Message</Text>
+                      <Text style={[styles.secondaryActionText, { color: accentColor }]}>
+                        Message
+                      </Text>
                     </Pressable>
                   </View>
                 </View>
@@ -272,7 +265,7 @@ export default function RoomDetailScreen({
             <View style={styles.section}>
               <View style={styles.sectionHeaderRow}>
                 <Text style={styles.sectionTitle}>PAYMENT HISTORY</Text>
-                <Badge status={badgeStatus} size="sm" />
+                <Text style={styles.floorChip}>View All</Text>
               </View>
 
               <View style={styles.card}>
@@ -301,7 +294,9 @@ export default function RoomDetailScreen({
                           </View>
 
                           <View style={styles.paymentTextWrap}>
-                            <Text style={styles.paymentMonth}>{formatMonthYear(invoice.billing_month)}</Text>
+                            <Text style={styles.paymentMonth}>
+                              {formatMonthYear(invoice.billing_month)}
+                            </Text>
                             <Text style={styles.paymentDate}>
                               {payment
                                 ? `Paid on ${formatShortDate(payment.paid_at)}`
@@ -325,7 +320,7 @@ export default function RoomDetailScreen({
               </View>
             </View>
 
-            <View style={styles.section}>
+            {/* <View style={styles.section}>
               <Text style={styles.sectionTitle}>ROOM DETAILS</Text>
 
               <View style={styles.card}>
@@ -354,7 +349,7 @@ export default function RoomDetailScreen({
                   </Text>
                 </View>
               </View>
-            </View>
+            </View> */}
           </View>
         </ScrollView>
 

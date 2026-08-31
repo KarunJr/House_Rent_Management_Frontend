@@ -41,7 +41,10 @@ export default function RootLayout() {
       <Stack>
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="lease/create" options={{ headerShown: false }} />
+        <Stack.Screen name="room/add" options={{ headerShown: false }} />
         <Stack.Screen name="room/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="tenant/add" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
       </Stack>
     </ToastProvider>
