@@ -13,7 +13,7 @@ export default function AddRoomRoute() {
       <AddRoomScreen
         floors={ownerFloors}
         onBack={() => router.back()}
-        onCreated={() => router.back()}
+        onSaved={() => router.back()}
       />
     </>
   );

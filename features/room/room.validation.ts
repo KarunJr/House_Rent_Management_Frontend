@@ -1,6 +1,6 @@
 import * as z from 'zod';
 
-export const AddRoomSchema = z.object({
+export const RoomSchema = z.object({
   roomName: z
     .string()
     .trim()
@@ -14,8 +14,13 @@ export const AddRoomSchema = z.object({
     .number()
     .positive({ error: 'Base rent must be greater than 0' })
     .max(9999999, { error: 'Base rent is too large' }),
-  status: z.enum(['AVAILABLE', 'MAINTENANCE']),
+  status: z.enum(['AVAILABLE', 'MAINTENANCE', 'OCCUPIED']),
 });
 
-export type AddRoomFormInput = z.input<typeof AddRoomSchema>;
-export type AddRoomFormData = z.output<typeof AddRoomSchema>;
+export type RoomFormInput = z.input<typeof RoomSchema>;
+export type RoomFormData = z.output<typeof RoomSchema>;
+
+// Kept as aliases so the Add Room route remains easy to read.
+export const AddRoomSchema = RoomSchema;
+export type AddRoomFormInput = RoomFormInput;
+export type AddRoomFormData = RoomFormData;

@@ -1,8 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
-import { BikramDatePicker } from '@inicrea/bikram-sambat-react-native';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Controller, useForm } from 'react-hook-form';
 import { useMemo } from 'react';
+import { Controller, useForm } from 'react-hook-form';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -17,8 +16,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { toast } from '@/components/toast';
 import { Fonts } from '@/constants/theme';
 import type { RoomWithDetails, Tenant } from '@/features/home/home.types';
-import { formatCanonicalDateSummary, pickerValueFromCanonicalDate, canonicalDateFromPicker } from '@/features/settings/date.utils';
+import { AppDatePicker } from '@/features/settings/components/AppDatePicker';
 import { useDatePreferenceStore } from '@/features/settings/date-preference.store';
+import { canonicalDateFromDate, formatCanonicalDateForMode } from '@/features/settings/date.utils';
 
 import { CreateLeaseFormData, CreateLeaseFormInput, CreateLeaseSchema } from '../lease.validation';
 
@@ -57,7 +57,7 @@ export default function CreateLeaseScreen({
   onCreated,
 }: CreateLeaseScreenProps) {
   const defaultRoom = rooms.find((room) => room.id === initialRoomId) ?? rooms[0];
-  const today = new Date().toISOString().slice(0, 10);
+  const today = canonicalDateFromDate(new Date());
   const calendarMode = useDatePreferenceStore((state) => state.calendarMode);
 
   const {
@@ -82,15 +82,15 @@ export default function CreateLeaseScreen({
   const selectedStartDate = watch('startDate');
 
   const selectedRoom = rooms.find((room) => room.id === Number(selectedRoomId));
-  const resolvedDates = useMemo(
-    () => formatCanonicalDateSummary(selectedStartDate),
-    [selectedStartDate],
+  const displayedStartDate = useMemo(
+    () => formatCanonicalDateForMode(selectedStartDate, calendarMode),
+    [calendarMode, selectedStartDate],
   );
 
   const onSubmit = async (data: CreateLeaseFormData) => {
     const chosenRoom = rooms.find((room) => room.id === data.roomId);
     const chosenTenant = tenants.find((tenant) => tenant.id === data.tenantId);
-
+    console.log('Data', data);
     toast.success(
       `${chosenTenant?.name ?? 'Tenant'} is ready for Room ${chosenRoom?.room_name ?? data.roomId}.`,
       {
@@ -260,62 +260,30 @@ export default function CreateLeaseScreen({
             <View className="gap-1.5">
               <Text className="text-sm font-semibold text-slate-700">Start Date</Text>
               <Text className="text-xs leading-5 text-slate-500">
-                Calendar mode follows owner preference: {calendarMode}
+                Your calendar preference is set to {calendarMode}.
               </Text>
               <Controller
                 control={control}
                 name="startDate"
                 render={({ field: { onChange, value } }) => (
-                  <BikramDatePicker
-                    value={pickerValueFromCanonicalDate(value, calendarMode)}
-                    onChange={(nextValue, detail) => {
-                      onChange(
-                        canonicalDateFromPicker({
-                          value: nextValue,
-                          mode: calendarMode,
-                          adFromDetail: detail.ad,
-                        }),
-                      );
-                    }}
-                    valueFormat={calendarMode}
-                    locale={calendarMode === 'BS' ? 'ne' : 'en'}
-                    format="YYYY MMMM DD"
+                  <AppDatePicker
+                    value={value}
+                    mode={calendarMode}
+                    onChange={onChange}
                     placeholder="Select lease start date"
-                    colorScheme="light"
-                    style={{
-                      width: '100%',
-                    }}
-                    theme={{
-                      accent: '#14B8A6',
-                      accentContrast: '#FFFFFF',
-                      background: '#FFFFFF',
-                      foreground: '#0F172A',
-                      muted: '#64748B',
-                      border: '#E2E8F0',
-                      weekend: '#DC2626',
-                      radius: 16,
-                      daySize: 40,
-                      fontFamily: Fonts.sans,
-                    }}
                   />
                 )}
               />
               {errors.startDate && (
                 <Text className="text-xs text-red-500">{errors.startDate.message}</Text>
               )}
-              {resolvedDates.ad || resolvedDates.bs ? (
+              {displayedStartDate ? (
                 <View className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
-                  <Text className="text-[11px] font-semibold uppercase tracking-[0.8px] text-slate-400">
-                    Stored And Displayed
-                  </Text>
-                  <Text className="mt-2 text-sm font-semibold text-slate-800">
-                    Saved to API/DB: {resolvedDates.ad || '-'}
-                  </Text>
-                  <Text className="mt-1 text-sm font-semibold text-slate-800">
-                    Shown in app: {calendarMode === 'BS' ? resolvedDates.bs || '-' : resolvedDates.ad || '-'}
+                  <Text className="text-sm font-semibold text-slate-800">
+                    Selected: {displayedStartDate}
                   </Text>
                   <Text className="mt-1 text-xs leading-5 text-slate-500">
-                    We always keep the canonical value in AD, then render it in the owner&apos;s preferred calendar.
+                    Saved internally as an AD calendar date.
                   </Text>
                 </View>
               ) : null}

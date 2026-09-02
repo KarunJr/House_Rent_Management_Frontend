@@ -12,6 +12,7 @@ interface RoomDetailScreenProps {
   invoiceHistory: BillInvoice[];
   payments: Payment[];
   onBack: () => void;
+  onEdit: () => void;
 }
 
 const ROOM_IMAGES: Record<number, string> = {
@@ -127,6 +128,7 @@ export default function RoomDetailScreen({
   invoiceHistory,
   payments,
   onBack,
+  onEdit,
 }: RoomDetailScreenProps) {
   const insets = useSafeAreaInsets();
   const accentColor = getAccentColor(room.status);
@@ -170,8 +172,13 @@ export default function RoomDetailScreen({
                     <Ionicons name="arrow-back" size={18} color="#0F172A" />
                   </Pressable>
 
-                  <View style={[styles.floorChip, { backgroundColor: accentColor }]}>
-                    <Text style={styles.floorChipText}>{floorLabel(room.floor.floor_number)}</Text>
+                  <View style={styles.heroActions}>
+                    <View style={[styles.floorChip, { backgroundColor: accentColor }]}>
+                      <Text style={styles.floorChipText}>{floorLabel(room.floor.floor_number)}</Text>
+                    </View>
+                    <Pressable onPress={onEdit} style={styles.editButton}>
+                      <Ionicons name="pencil-outline" size={18} color="#0F172A" />
+                    </Pressable>
                   </View>
                 </View>
 
@@ -413,6 +420,19 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 12,
     fontWeight: '800',
+  },
+  heroActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  editButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.92)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   heroTitleBlock: {
     paddingHorizontal: 18,

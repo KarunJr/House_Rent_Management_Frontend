@@ -41,6 +41,12 @@ export default function RoomDetailsRoute() {
         invoiceHistory={invoiceHistory}
         payments={payments}
         onBack={() => router.back()}
+        onEdit={() =>
+          router.push({
+            pathname: '/room/[id]/edit',
+            params: { id: String(room.id) },
+          })
+        }
       />
     </>
   );

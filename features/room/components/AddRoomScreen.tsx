@@ -14,7 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { toast } from '@/components/toast';
 import { Fonts } from '@/constants/theme';
-import type { Floor, RoomStatus } from '@/features/home/home.types';
+import type { Floor, Room, RoomStatus } from '@/features/home/home.types';
 
 import { AddRoomFormData, AddRoomFormInput, AddRoomSchema } from '../room.validation';
 
@@ -57,23 +57,29 @@ const floorLabel = (floorNumber: number) => {
 interface AddRoomScreenProps {
   floors: Floor[];
   onBack: () => void;
-  onCreated: () => void;
+  onSaved: () => void;
+  room?: Room;
 }
 
-export default function AddRoomScreen({ floors, onBack, onCreated }: AddRoomScreenProps) {
+export default function AddRoomScreen({ floors, onBack, onSaved, room }: AddRoomScreenProps) {
+  const isEditing = Boolean(room);
+  const isOccupied = room?.status === 'OCCUPIED';
+  const formDefaults = {
+    roomName: room?.room_name ?? '',
+    floorId: room?.floor_id ?? floors[0]?.id ?? '',
+    baseRentAmount: room?.base_rent_amount ?? '',
+    status: room?.status ?? 'AVAILABLE',
+  };
+
   const {
     control,
     handleSubmit,
     watch,
-    reset,
     formState: { errors, isSubmitting },
   } = useForm<AddRoomFormInput, unknown, AddRoomFormData>({
     resolver: zodResolver(AddRoomSchema),
     defaultValues: {
-      roomName: '',
-      floorId: floors[0]?.id ?? '',
-      baseRentAmount: '',
-      status: 'AVAILABLE',
+      ...formDefaults,
     },
   });
 
@@ -82,16 +88,10 @@ export default function AddRoomScreen({ floors, onBack, onCreated }: AddRoomScre
 
   const onSubmit = async (data: AddRoomFormData) => {
     toast.success(`Room ${data.roomName.trim().toUpperCase()} is ready to save.`, {
-      title: 'Room created',
+      title: isEditing ? 'Room updated' : 'Room created',
     });
-    reset({
-      roomName: '',
-      floorId: floors[0]?.id ?? '',
-      baseRentAmount: '',
-      status: 'AVAILABLE',
-    });
-    console.log('Data', data);
-    onCreated();
+    console.log('Room form data', data);
+    onSaved();
   };
 
   return (
@@ -121,16 +121,20 @@ export default function AddRoomScreen({ floors, onBack, onCreated }: AddRoomScre
               <Ionicons name="arrow-back" size={20} color="#0F172A" />
             </Pressable>
 
-            <Text className="text-lg font-extrabold text-slate-900">Add Room</Text>
+            <Text className="text-lg font-extrabold text-slate-900">
+              {isEditing ? 'Edit Room' : 'Add Room'}
+            </Text>
             <View className="w-11" />
           </View>
 
           <View className="mb-6">
             <Text className="text-3xl font-extrabold tracking-tight text-slate-900">
-              Create a new room
+              {isEditing ? `Update Room ${room?.room_name}` : 'Create a new room'}
             </Text>
             <Text className="mt-2 text-sm leading-6 text-slate-500">
-              Add the room number, pick its floor, and define the starting rent.
+              {isEditing
+                ? 'Keep the room details accurate without affecting its rental history.'
+                : 'Add the room number, pick its floor, and define the starting rent.'}
             </Text>
           </View>
 
@@ -223,51 +227,57 @@ export default function AddRoomScreen({ floors, onBack, onCreated }: AddRoomScre
             </View>
 
             <View className="gap-1.5">
-              <Text className="text-sm font-semibold text-slate-700">Initial Status</Text>
-              <View className="gap-3">
-                {STATUS_OPTIONS.map((option) => {
-                  const isSelected = selectedStatus === option.value;
+              <Text className="text-sm font-semibold text-slate-700">Room Status</Text>
+              {isOccupied ? (
+                <View className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3.5">
+                  <View className="flex-row items-start gap-3">
+                    <Ionicons name="key-outline" size={20} color="#B45309" />
+                    <View className="flex-1">
+                      <Text className="text-sm font-bold text-amber-900">Occupied by an active lease</Text>
+                      <Text className="mt-1 text-xs leading-5 text-amber-800">
+                        Use End Lease when the tenant leaves. That action will make this room available.
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+              ) : (
+                <View className="gap-3">
+                  {STATUS_OPTIONS.map((option) => {
+                    const isSelected = selectedStatus === option.value;
 
-                  return (
-                    <Controller
-                      key={option.value}
-                      control={control}
-                      name="status"
-                      render={({ field: { onChange } }) => (
-                        <Pressable
-                          onPress={() => onChange(option.value)}
-                          className="rounded-2xl border bg-white px-4 py-3.5"
-                          style={{
-                            borderColor: isSelected ? '#0D1F3C' : '#E2E8F0',
-                          }}
-                        >
-                          <View className="flex-row items-center justify-between">
-                            <View>
-                              <Text className="text-sm font-bold text-slate-900">
-                                {option.label}
-                              </Text>
-                              <Text className="mt-1 text-xs leading-5 text-slate-500">
-                                {option.helper}
-                              </Text>
+                    return (
+                      <Controller
+                        key={option.value}
+                        control={control}
+                        name="status"
+                        render={({ field: { onChange } }) => (
+                          <Pressable
+                            onPress={() => onChange(option.value)}
+                            className="rounded-2xl border bg-white px-4 py-3.5"
+                            style={{ borderColor: isSelected ? '#0D1F3C' : '#E2E8F0' }}
+                          >
+                            <View className="flex-row items-center justify-between">
+                              <View>
+                                <Text className="text-sm font-bold text-slate-900">{option.label}</Text>
+                                <Text className="mt-1 text-xs leading-5 text-slate-500">{option.helper}</Text>
+                              </View>
+                              <View
+                                className="h-5 w-5 items-center justify-center rounded-full border-2"
+                                style={{
+                                  borderColor: isSelected ? '#0D1F3C' : '#CBD5E1',
+                                  backgroundColor: isSelected ? '#0D1F3C' : '#FFFFFF',
+                                }}
+                              >
+                                {isSelected && <Ionicons name="checkmark" size={12} color="#FFFFFF" />}
+                              </View>
                             </View>
-                            <View
-                              className="h-5 w-5 items-center justify-center rounded-full border-2"
-                              style={{
-                                borderColor: isSelected ? '#0D1F3C' : '#CBD5E1',
-                                backgroundColor: isSelected ? '#0D1F3C' : '#FFFFFF',
-                              }}
-                            >
-                              {isSelected && (
-                                <Ionicons name="checkmark" size={12} color="#FFFFFF" />
-                              )}
-                            </View>
-                          </View>
-                        </Pressable>
-                      )}
-                    />
-                  );
-                })}
-              </View>
+                          </Pressable>
+                        )}
+                      />
+                    );
+                  })}
+                </View>
+              )}
             </View>
           </View>
 
@@ -287,7 +297,9 @@ export default function AddRoomScreen({ floors, onBack, onCreated }: AddRoomScre
                 opacity: isSubmitting ? 0.7 : 1,
               }}
             >
-              <Text className="text-base font-bold text-white">Save Room</Text>
+              <Text className="text-base font-bold text-white">
+                {isEditing ? 'Save Changes' : 'Save Room'}
+              </Text>
             </Pressable>
           </View>
         </ScrollView>
