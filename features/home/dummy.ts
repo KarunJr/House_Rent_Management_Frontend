@@ -71,6 +71,14 @@ export const tenants: Tenant[] = [
     created_at: '2024-11-01T00:00:00Z',
     updated_at: '2026-08-01T00:00:00Z',
   },
+  {
+    id: 5,
+    name: 'Kamala Ghimire',
+    phone: '9841234567',
+    email: null,
+    created_at: '2024-11-06T00:00:00Z',
+    updated_at: '2026-08-01T00:00:00Z',
+  },
 ];
 
 export const rooms: Room[] = [

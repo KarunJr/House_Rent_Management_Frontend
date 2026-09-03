@@ -1,6 +1,6 @@
 import RoomDetailScreen from '@/features/home/components/RoomDetailScreen';
 import { invoices, payments, roomsWithDetails } from '@/features/home/dummy';
-import { Stack, router, useLocalSearchParams } from 'expo-router';
+import { type Href, Stack, router, useLocalSearchParams } from 'expo-router';
 import { Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -47,6 +47,8 @@ export default function RoomDetailsRoute() {
             params: { id: String(room.id) },
           })
         }
+        onEndLease={() => router.push(`/room/${room.id}/end-lease` as Href)}
+        onTenantPress={(tenantId) => router.push(`/tenant/${tenantId}` as Href)}
       />
     </>
   );

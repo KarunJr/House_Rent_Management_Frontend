@@ -45,7 +45,11 @@ export default function RootLayout() {
         <Stack.Screen name="room/add" options={{ headerShown: false }} />
         <Stack.Screen name="room/[id]" options={{ headerShown: false }} />
         <Stack.Screen name="room/[id]/edit" options={{ headerShown: false }} />
+        <Stack.Screen name="room/[id]/end-lease" options={{ headerShown: false }} />
         <Stack.Screen name="tenant/add" options={{ headerShown: false }} />
+        <Stack.Screen name="tenant/index" options={{ headerShown: false }} />
+        <Stack.Screen name="tenant/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="tenant/[id]/edit" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
       </Stack>
     </ToastProvider>

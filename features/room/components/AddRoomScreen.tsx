@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { toast } from '@/components/toast';
+import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { Fonts } from '@/constants/theme';
 import type { Floor, Room, RoomStatus } from '@/features/home/home.types';
 
@@ -106,26 +107,7 @@ export default function AddRoomScreen({ floors, onBack, onSaved, room }: AddRoom
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <View className="mb-5 flex-row items-center justify-between">
-            <Pressable
-              onPress={onBack}
-              className="h-11 w-11 items-center justify-center rounded-2xl bg-white"
-              style={{
-                shadowColor: '#0F172A',
-                shadowOpacity: 0.06,
-                shadowRadius: 10,
-                shadowOffset: { width: 0, height: 4 },
-                elevation: 2,
-              }}
-            >
-              <Ionicons name="arrow-back" size={20} color="#0F172A" />
-            </Pressable>
-
-            <Text className="text-lg font-extrabold text-slate-900">
-              {isEditing ? 'Edit Room' : 'Add Room'}
-            </Text>
-            <View className="w-11" />
-          </View>
+          <ScreenHeader title={isEditing ? 'Edit Room' : 'Add Room'} onBack={onBack} />
 
           <View className="mb-6">
             <Text className="text-3xl font-extrabold tracking-tight text-slate-900">

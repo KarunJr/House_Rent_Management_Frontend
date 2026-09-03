@@ -13,40 +13,39 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { toast } from '@/components/toast';
+import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { Fonts } from '@/constants/theme';
+import type { Tenant } from '@/features/home/home.types';
 
 import { AddTenantFormData, AddTenantFormInput, AddTenantSchema } from '../tenant.validation';
 
 interface AddTenantScreenProps {
   onBack: () => void;
-  onCreated: () => void;
+  onSaved: () => void;
+  tenant?: Tenant;
+  onViewTenants?: () => void;
 }
 
-export default function AddTenantScreen({ onBack, onCreated }: AddTenantScreenProps) {
+export default function AddTenantScreen({ onBack, onSaved, tenant, onViewTenants }: AddTenantScreenProps) {
+  const isEditing = Boolean(tenant);
   const {
     control,
     handleSubmit,
-    reset,
     formState: { errors, isSubmitting },
   } = useForm<AddTenantFormInput, unknown, AddTenantFormData>({
     resolver: zodResolver(AddTenantSchema),
     defaultValues: {
-      name: '',
-      phone: '',
-      email: '',
+      name: tenant?.name ?? '',
+      phone: tenant?.phone ?? '',
+      email: tenant?.email ?? '',
     },
   });
 
   const onSubmit = async (data: AddTenantFormData) => {
     toast.success(`${data.name} is ready to save.`, {
-      title: 'Tenant created',
+      title: isEditing ? 'Tenant updated' : 'Tenant created',
     });
-    reset({
-      name: '',
-      phone: '',
-      email: '',
-    });
-    onCreated();
+    onSaved();
   };
 
   return (
@@ -61,31 +60,29 @@ export default function AddTenantScreen({ onBack, onCreated }: AddTenantScreenPr
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <View className="mb-5 flex-row items-center justify-between">
-            <Pressable
-              onPress={onBack}
-              className="h-11 w-11 items-center justify-center rounded-2xl bg-white"
-              style={{
-                shadowColor: '#0F172A',
-                shadowOpacity: 0.06,
-                shadowRadius: 10,
-                shadowOffset: { width: 0, height: 4 },
-                elevation: 2,
-              }}
-            >
-              <Ionicons name="arrow-back" size={20} color="#0F172A" />
-            </Pressable>
-
-            <Text className="text-lg font-extrabold text-slate-900">Add Tenant</Text>
-            <View className="w-11" />
-          </View>
+          <ScreenHeader
+            title={isEditing ? 'Edit Tenant' : 'Add Tenant'}
+            onBack={onBack}
+            right={
+              !isEditing && onViewTenants ? (
+                <Pressable
+                  onPress={onViewTenants}
+                  className="h-11 w-11 items-center justify-center rounded-2xl bg-white"
+                >
+                  <Ionicons name="people-outline" size={20} color="#0F172A" />
+                </Pressable>
+              ) : undefined
+            }
+          />
 
           <View className="mb-6">
             <Text className="text-3xl font-extrabold tracking-tight text-slate-900">
-              Create a new tenant
+              {isEditing ? `Update ${tenant?.name}` : 'Create a new tenant'}
             </Text>
             <Text className="mt-2 text-sm leading-6 text-slate-500">
-              Save the tenant details first, then you can connect them to a room through a lease.
+              {isEditing
+                ? 'Keep the tenant contact details accurate without changing their lease history.'
+                : 'Save the tenant details first, then you can connect them to a room through a lease.'}
             </Text>
           </View>
 
@@ -177,7 +174,9 @@ export default function AddTenantScreen({ onBack, onCreated }: AddTenantScreenPr
                 opacity: isSubmitting ? 0.7 : 1,
               }}
             >
-              <Text className="text-base font-bold text-white">Save Tenant</Text>
+              <Text className="text-base font-bold text-white">
+                {isEditing ? 'Save Changes' : 'Save Tenant'}
+              </Text>
             </Pressable>
           </View>
         </ScrollView>

@@ -13,6 +13,8 @@ interface RoomDetailScreenProps {
   payments: Payment[];
   onBack: () => void;
   onEdit: () => void;
+  onEndLease: () => void;
+  onTenantPress: (tenantId: number) => void;
 }
 
 const ROOM_IMAGES: Record<number, string> = {
@@ -129,6 +131,8 @@ export default function RoomDetailScreen({
   payments,
   onBack,
   onEdit,
+  onEndLease,
+  onTenantPress,
 }: RoomDetailScreenProps) {
   const insets = useSafeAreaInsets();
   const accentColor = getAccentColor(room.status);
@@ -240,7 +244,10 @@ export default function RoomDetailScreen({
                 </View>
               ) : (
                 <View style={styles.card}>
-                  <View style={styles.tenantHeader}>
+                  <Pressable
+                    onPress={() => onTenantPress(room.tenant!.id)}
+                    style={styles.tenantHeader}
+                  >
                     <Avatar name={room.tenant!.name} size={50} />
 
                     <View style={styles.tenantMeta}>
@@ -250,7 +257,8 @@ export default function RoomDetailScreen({
                         Tenant since {formatMonthYear(room.active_lease!.start_date)}
                       </Text>
                     </View>
-                  </View>
+                    <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
+                  </Pressable>
 
                   <View style={styles.tenantActions}>
                     <Pressable style={styles.primaryAction}>
@@ -326,45 +334,20 @@ export default function RoomDetailScreen({
                 )}
               </View>
             </View>
-
-            {/* <View style={styles.section}>
-              <Text style={styles.sectionTitle}>ROOM DETAILS</Text>
-
-              <View style={styles.card}>
-                <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>Room status</Text>
-                  <Text style={styles.infoValue}>
-                    {room.status.charAt(0) + room.status.slice(1).toLowerCase()}
-                  </Text>
-                </View>
-                <View style={[styles.infoRow, styles.infoBorder]}>
-                  <Text style={styles.infoLabel}>Base rent</Text>
-                  <Text style={styles.infoValue}>{formatCurrency(room.base_rent_amount)}</Text>
-                </View>
-                <View style={[styles.infoRow, styles.infoBorder]}>
-                  <Text style={styles.infoLabel}>Current invoice</Text>
-                  <Text style={styles.infoValue}>
-                    {currentInvoice ? formatCurrency(currentInvoice.total_amount) : 'Not available'}
-                  </Text>
-                </View>
-                <View style={[styles.infoRow, styles.infoBorder]}>
-                  <Text style={styles.infoLabel}>Latest payment</Text>
-                  <Text style={styles.infoValue}>
-                    {currentPayment
-                      ? `${formatCurrency(currentPayment.amount)}`
-                      : 'Not recorded'}
-                  </Text>
-                </View>
-              </View>
-            </View> */}
           </View>
         </ScrollView>
 
         {!isVacant ? (
           <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 14) }]}>
-            <Pressable style={[styles.footerButton, { backgroundColor: accentColor }]}>
-              <Text style={styles.footerButtonText}>Record New Payment</Text>
-            </Pressable>
+            <View style={styles.footerActions}>
+              <Pressable style={[styles.footerButton, { backgroundColor: accentColor }]}>
+                <Text style={styles.footerButtonText}>Record New Payment</Text>
+              </Pressable>
+              <Pressable onPress={onEndLease} style={styles.endLeaseButton}>
+                <Ionicons name="log-out-outline" size={17} color="#B91C1C" />
+                <Text style={styles.endLeaseButtonText}>End Lease</Text>
+              </Pressable>
+            </View>
           </View>
         ) : null}
       </View>
@@ -701,6 +684,25 @@ const styles = StyleSheet.create({
   footerButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
+    fontWeight: '800',
+  },
+  footerActions: {
+    gap: 10,
+  },
+  endLeaseButton: {
+    height: 42,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#FECACA',
+    backgroundColor: '#FFF7F7',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+  },
+  endLeaseButtonText: {
+    color: '#B91C1C',
+    fontSize: 14,
     fontWeight: '800',
   },
 });

@@ -18,3 +18,16 @@ export const CreateLeaseSchema = z.object({
 
 export type CreateLeaseFormInput = z.input<typeof CreateLeaseSchema>;
 export type CreateLeaseFormData = z.output<typeof CreateLeaseSchema>;
+
+export const EndLeaseSchema = z.object({
+  endDate: z
+    .string()
+    .trim()
+    .min(1, { error: 'Move-out date is required' })
+    .regex(/^\d{4}-\d{2}-\d{2}$/, {
+      error: 'Use date format YYYY-MM-DD',
+    }),
+});
+
+export type EndLeaseFormInput = z.input<typeof EndLeaseSchema>;
+export type EndLeaseFormData = z.output<typeof EndLeaseSchema>;

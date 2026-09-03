@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { toast } from '@/components/toast';
+import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { Fonts } from '@/constants/theme';
 import type { RoomWithDetails, Tenant } from '@/features/home/home.types';
 import { AppDatePicker } from '@/features/settings/components/AppDatePicker';
@@ -118,24 +119,7 @@ export default function CreateLeaseScreen({
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <View className="mb-5 flex-row items-center justify-between">
-            <Pressable
-              onPress={onBack}
-              className="h-11 w-11 items-center justify-center rounded-2xl bg-white"
-              style={{
-                shadowColor: '#0F172A',
-                shadowOpacity: 0.06,
-                shadowRadius: 10,
-                shadowOffset: { width: 0, height: 4 },
-                elevation: 2,
-              }}
-            >
-              <Ionicons name="arrow-back" size={20} color="#0F172A" />
-            </Pressable>
-
-            <Text className="text-lg font-extrabold text-slate-900">Create Lease</Text>
-            <View className="w-11" />
-          </View>
+          <ScreenHeader title="Create Lease" onBack={onBack} />
 
           <View className="mb-6">
             <Text className="text-3xl font-extrabold tracking-tight text-slate-900">
