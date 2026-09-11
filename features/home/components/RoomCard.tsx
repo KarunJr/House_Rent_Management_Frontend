@@ -21,10 +21,10 @@ type StatusCopy = {
   descriptionColor: string;
 };
 
-const floorLabel = (floorNumber: number) => {
-  if (floorNumber === 1) return '1st Floor';
-  if (floorNumber === 2) return '2nd Floor';
-  if (floorNumber === 3) return '3rd Floor';
+const floorLabel = (floorNumber: string) => {
+  if (floorNumber === '1') return '1st Floor';
+  if (floorNumber === '2') return '2nd Floor';
+  if (floorNumber === '3') return '3rd Floor';
 
   return `${floorNumber}th Floor`;
 };
@@ -147,7 +147,7 @@ export default function RoomCard({ room, onPress }: RoomCardProps) {
                   }}
                 >
                   <Text className="text-[11px] font-semibold" style={{ color: accentColor }}>
-                    {floorLabel(room.floor.floor_number)}
+                    {floorLabel(room.floor_id)}
                   </Text>
                 </View>
 

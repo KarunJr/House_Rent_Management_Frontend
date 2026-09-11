@@ -7,9 +7,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { roomsWithDetails, stats } from '@/features/home/dummy';
 import RoomCard from '@/features/home/components/RoomCard';
 import QuickActionCard from '@/features/home/components/QuickActionCard';
+// import { useRoomStore } from '@/features/room/room.store';
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
+  // const rooms = useRoomStore((state) => state.rooms);
   const filteredRooms = roomsWithDetails;
 
   const occupancyPct =

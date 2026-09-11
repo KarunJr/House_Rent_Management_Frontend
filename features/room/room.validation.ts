@@ -9,7 +9,7 @@ export const RoomSchema = z.object({
     .regex(/^[A-Za-z0-9-]+$/, {
       error: 'Use only letters, numbers, or hyphen',
     }),
-  floorId: z.coerce.number().int().positive({ error: 'Select a floor' }),
+  floorId: z.string({ error: 'Select a floor' }),
   baseRentAmount: z.coerce
     .number()
     .positive({ error: 'Base rent must be greater than 0' })

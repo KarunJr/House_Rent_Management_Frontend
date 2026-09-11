@@ -15,9 +15,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { toast } from '@/components/toast';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { Fonts } from '@/constants/theme';
-import type { Floor, Room, RoomStatus } from '@/features/home/home.types';
+import type { Room, RoomStatus } from '@/features/home/home.types';
 
+import { handleError } from '@/helpers/axios.error';
 import { AddRoomFormData, AddRoomFormInput, AddRoomSchema } from '../room.validation';
+import { useRoomStore } from '../room.store';
 
 const STATUS_OPTIONS: {
   label: string;
@@ -54,24 +56,33 @@ const floorLabel = (floorNumber: number) => {
       return `${floorNumber}th Floor`;
   }
 };
-
+interface Floor {
+  id: string;
+  owner_id: number;
+  floor_number: number;
+  created_at: string;
+}
+const floors: Floor[] = [
+  { id: '1', owner_id: 22, floor_number: 1, created_at: 'Karun Ghimire' },
+  { id: '2', owner_id: 22, floor_number: 1, created_at: 'Karun Ghimire' },
+];
 interface AddRoomScreenProps {
-  floors: Floor[];
   onBack: () => void;
   onSaved: () => void;
   room?: Room;
 }
 
-export default function AddRoomScreen({ floors, onBack, onSaved, room }: AddRoomScreenProps) {
+export default function AddRoomScreen({ onBack, onSaved, room }: AddRoomScreenProps) {
   const isEditing = Boolean(room);
   const isOccupied = room?.status === 'OCCUPIED';
   const formDefaults = {
     roomName: room?.room_name ?? '',
+    // floorId: room?.floor_id ?? '',
     floorId: room?.floor_id ?? floors[0]?.id ?? '',
     baseRentAmount: room?.base_rent_amount ?? '',
     status: room?.status ?? 'AVAILABLE',
   };
-
+  const addRoom = useRoomStore((state) => state.addRoom);
   const {
     control,
     handleSubmit,
@@ -88,11 +99,26 @@ export default function AddRoomScreen({ floors, onBack, onSaved, room }: AddRoom
   const selectedFloorId = watch('floorId');
 
   const onSubmit = async (data: AddRoomFormData) => {
-    toast.success(`Room ${data.roomName.trim().toUpperCase()} is ready to save.`, {
-      title: isEditing ? 'Room updated' : 'Room created',
-    });
-    console.log('Room form data', data);
-    onSaved();
+    try {
+      console.log('Request:', data);
+      toast.success(`Room ${data.roomName.trim().toUpperCase()} is ready to save.`, {
+        title: isEditing ? 'Room updated' : 'Room created',
+      });
+      if (!isEditing) {
+        const response = await addRoom(data);
+        if (response.success && response.roomDetails) {
+          console.log('Added room details:', response.roomDetails);
+        }
+      }
+      console.log('Room form data', data);
+      onSaved();
+    } catch (error) {
+      const apiError = handleError(error);
+      toast.error(apiError.message, {
+        title: 'Please try again',
+      });
+      console.log(apiError);
+    }
   };
 
   return (
@@ -215,9 +241,12 @@ export default function AddRoomScreen({ floors, onBack, onSaved, room }: AddRoom
                   <View className="flex-row items-start gap-3">
                     <Ionicons name="key-outline" size={20} color="#B45309" />
                     <View className="flex-1">
-                      <Text className="text-sm font-bold text-amber-900">Occupied by an active lease</Text>
+                      <Text className="text-sm font-bold text-amber-900">
+                        Occupied by an active lease
+                      </Text>
                       <Text className="mt-1 text-xs leading-5 text-amber-800">
-                        Use End Lease when the tenant leaves. That action will make this room available.
+                        Use End Lease when the tenant leaves. That action will make this room
+                        available.
                       </Text>
                     </View>
                   </View>
@@ -240,8 +269,12 @@ export default function AddRoomScreen({ floors, onBack, onSaved, room }: AddRoom
                           >
                             <View className="flex-row items-center justify-between">
                               <View>
-                                <Text className="text-sm font-bold text-slate-900">{option.label}</Text>
-                                <Text className="mt-1 text-xs leading-5 text-slate-500">{option.helper}</Text>
+                                <Text className="text-sm font-bold text-slate-900">
+                                  {option.label}
+                                </Text>
+                                <Text className="mt-1 text-xs leading-5 text-slate-500">
+                                  {option.helper}
+                                </Text>
                               </View>
                               <View
                                 className="h-5 w-5 items-center justify-center rounded-full border-2"
@@ -250,7 +283,9 @@ export default function AddRoomScreen({ floors, onBack, onSaved, room }: AddRoom
                                   backgroundColor: isSelected ? '#0D1F3C' : '#FFFFFF',
                                 }}
                               >
-                                {isSelected && <Ionicons name="checkmark" size={12} color="#FFFFFF" />}
+                                {isSelected && (
+                                  <Ionicons name="checkmark" size={12} color="#FFFFFF" />
+                                )}
                               </View>
                             </View>
                           </Pressable>
