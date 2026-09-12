@@ -313,21 +313,21 @@ export const roomsWithDetails: RoomWithDetails[] = rooms.map((room) => {
   };
 });
 
-export const stats = {
-  totalRooms: rooms.length,
+// export const stats = {
+//   totalRooms: rooms.length,
 
-  occupied: rooms.filter((room) => room.status === 'OCCUPIED').length,
+//   occupied: rooms.filter((room) => room.status === 'OCCUPIED').length,
 
-  vacant: rooms.filter((room) => room.status === 'AVAILABLE').length,
+//   vacant: rooms.filter((room) => room.status === 'AVAILABLE').length,
 
-  maintenance: rooms.filter((room) => room.status === 'MAINTENANCE').length,
+//   maintenance: rooms.filter((room) => room.status === 'MAINTENANCE').length,
 
-  pendingPayments: invoices.filter(
-    (invoice) =>
-      invoice.status === 'PENDING' || invoice.status === 'OVERDUE' || invoice.status === 'PARTIAL',
-  ).length,
+//   pendingPayments: invoices.filter(
+//     (invoice) =>
+//       invoice.status === 'PENDING' || invoice.status === 'OVERDUE' || invoice.status === 'PARTIAL',
+//   ).length,
 
-  monthlyRevenue: payments
-    .filter((payment) => payment.paid_at.startsWith('2026-08'))
-    .reduce((sum, payment) => sum + payment.amount, 0),
-};
+//   monthlyRevenue: payments
+//     .filter((payment) => payment.paid_at.startsWith('2026-08'))
+//     .reduce((sum, payment) => sum + payment.amount, 0),
+// };

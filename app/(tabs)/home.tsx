@@ -4,22 +4,37 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { roomsWithDetails, stats } from '@/features/home/dummy';
+import RoomListState from '@/features/home/components/RoomListState';
 import RoomCard from '@/features/home/components/RoomCard';
 import QuickActionCard from '@/features/home/components/QuickActionCard';
-// import { useRoomStore } from '@/features/room/room.store';
+import { useRoomStore } from '@/features/room/room.store';
+import { useEffect } from 'react';
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
-  // const rooms = useRoomStore((state) => state.rooms);
-  const filteredRooms = roomsWithDetails;
+  const getRooms = useRoomStore((state) => state.getRoom);
+  const rooms = useRoomStore((state) => state.rooms);
+  const isLoading = useRoomStore((state) => state.isLoading);
+  const fetchError = useRoomStore((state) => state.fetchError);
+  useEffect(() => {
+    if (rooms === null) {
+      // The store exposes request failures through fetchError for the inline retry state.
+      void getRooms().catch(() => {});
+    }
+  }, [getRooms, rooms]);
 
+  const roomList = rooms ?? [];
+  const stats = {
+    totalRooms: roomList.length,
+
+    occupied: roomList.filter((room) => room.status === 'Occupied').length,
+
+    vacant: roomList.filter((room) => room.status === 'Available').length,
+  };
   const occupancyPct =
     stats.totalRooms > 0 ? Math.round((stats.occupied / stats.totalRooms) * 100) : 0;
 
-  const vacantRooms = filteredRooms.filter(
-    (room) => room.status === 'AVAILABLE' || room.active_lease === null,
-  );
+  const vacantRooms = roomList.filter((room) => room.status === 'Available');
   return (
     <View className="flex-1 bg-gray-200" style={{ paddingTop: insets.top }}>
       <ScrollView
@@ -63,7 +78,8 @@ export default function HomeScreen() {
             </Text>
 
             <Text className="mb-4 text-base font-semibold text-white/70">
-              {stats.pendingPayments} payments still pending
+              {/* {stats.pendingPayments} payments still pending */}
+              Need to fix- payments still pending
             </Text>
 
             <View className="mb-4 h-2 overflow-hidden rounded-full bg-white/20">
@@ -106,6 +122,7 @@ export default function HomeScreen() {
             <View className="flex-row gap-3">
               <QuickActionCard
                 label="Add Room"
+                style={{ flex: 1 }}
                 caption="Create a new rentable space."
                 icon="home-outline"
                 tone={{
@@ -120,6 +137,7 @@ export default function HomeScreen() {
 
               <QuickActionCard
                 label="Add Tenant"
+                style={{ flex: 1 }}
                 caption="Save tenant details for leasing."
                 icon="people-outline"
                 tone={{
@@ -133,10 +151,10 @@ export default function HomeScreen() {
               />
             </View>
 
-              <QuickActionCard
-                label="Create Lease"
-                caption="Open the next vacant room and assign it."
-                icon="document-text-outline"
+            <QuickActionCard
+              label="Create Lease"
+              caption="Open the next vacant room and assign it."
+              icon="document-text-outline"
               tone={{
                 background: '#EFF6FF',
                 border: '#BFDBFE',
@@ -165,13 +183,22 @@ export default function HomeScreen() {
         <View className="mx-5">
           <View className="mb-3 flex-row items-center justify-between">
             <Text className="text-base font-extrabold text-[#0D1F3C]">
-              Rooms ({filteredRooms.length})
+              Rooms{rooms !== null ? ` (${roomList.length})` : ''}
             </Text>
           </View>
 
-          {filteredRooms.map((room) => (
-            <RoomCard key={room.id} room={room} onPress={(id) => router.push(`/room/${id}`)} />
-          ))}
+          {roomList.length === 0 ? (
+            <RoomListState
+              isLoading={isLoading}
+              error={fetchError}
+              onRetry={() => { void getRooms().catch(() => {}); }}
+              onAddRoom={() => router.push('/room/add')}
+            />
+          ) : (
+            roomList.map((room) => (
+              <RoomCard key={room.id} room={room} onPress={(id) => router.push(`/room/${id}`)} />
+            ))
+          )}
         </View>
       </ScrollView>
     </View>

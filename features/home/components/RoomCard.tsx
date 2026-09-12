@@ -1,13 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, Text, View } from 'react-native';
-
-import { invoiceStatusToBadge, type RoomWithDetails } from '../home.types';
+// import { invoiceStatusToBadge, type RoomWithDetails } from '../home.types';
 import { Avatar } from './ui/Avatar';
-import Badge from './ui/StatusBadge';
+// import Badge from './ui/StatusBadge';
+import { RoomCardDetails } from '@/features/room/room.types';
 
 interface RoomCardProps {
-  room: RoomWithDetails;
-  onPress: (id: number) => void;
+  room: RoomCardDetails;
+  onPress: (id: string) => void;
 }
 
 type StatusCopy = {
@@ -29,13 +29,13 @@ const floorLabel = (floorNumber: string) => {
   return `${floorNumber}th Floor`;
 };
 
-const getAccentColor = (status: RoomWithDetails['status']) => {
+const getAccentColor = (status: RoomCardDetails['status']) => {
   switch (status) {
-    case 'OCCUPIED':
+    case 'Occupied':
       return '#14B8A6';
-    case 'AVAILABLE':
+    case 'Available':
       return '#F59E0B';
-    case 'MAINTENANCE':
+    case 'Maintenance':
       return '#F97316';
     default:
       return '#6B7280';
@@ -50,8 +50,8 @@ const formatDate = (date: string) =>
     year: 'numeric',
   });
 
-const getStatusCopy = (room: RoomWithDetails): StatusCopy => {
-  if (room.status === 'MAINTENANCE') {
+const getStatusCopy = (room: RoomCardDetails): StatusCopy => {
+  if (room.status === 'Maintenance') {
     return {
       title: 'Under maintenance',
       description: 'This room is temporarily unavailable for tenant assignment.',
@@ -64,7 +64,7 @@ const getStatusCopy = (room: RoomWithDetails): StatusCopy => {
     };
   }
 
-  if (room.status === 'AVAILABLE' || room.active_lease === null) {
+  if (room.status === 'Available' || room.activeLease === null) {
     return {
       title: 'Ready for lease',
       description: 'No tenant assigned yet. Open this room to create a new lease.',
@@ -78,8 +78,8 @@ const getStatusCopy = (room: RoomWithDetails): StatusCopy => {
   }
 
   return {
-    title: room.tenant?.name ?? 'Current tenant',
-    description: `Tenant since ${formatDate(room.active_lease!.start_date)}`,
+    title: room.activeLease?.tenant.name ?? 'Current tenant',
+    description: `Tenant since ${formatDate(room.activeLease?.startDate)}`,
     icon: 'person-outline',
     backgroundColor: '#F8FAFC',
     borderColor: '#E2E8F0',
@@ -91,18 +91,18 @@ const getStatusCopy = (room: RoomWithDetails): StatusCopy => {
 
 export default function RoomCard({ room, onPress }: RoomCardProps) {
   const accentColor = getAccentColor(room.status);
-  const isVacant = room.status === 'AVAILABLE' || room.active_lease === null;
-  const isMaintenance = room.status === 'MAINTENANCE';
-  const tenant = room.tenant;
-  const rentAmount = room.active_lease?.monthly_rent ?? room.base_rent_amount;
+  const isVacant = room.status === 'Available' || room.activeLease === null;
+  const isMaintenance = room.status === 'Maintenance';
+  const tenant = room.activeLease?.tenant;
+  const rentAmount = room.activeLease?.monthlyRent ?? room.baseRentAmount;
   const statusCopy = getStatusCopy(room);
-  const badgeStatus = isMaintenance
-    ? 'maintenance'
-    : isVacant
-      ? 'vacant'
-      : room.current_invoice
-        ? invoiceStatusToBadge(room.current_invoice.status)
-        : 'pending';
+  // const badgeStatus = isMaintenance
+  //   ? 'maintenance'
+  //   : isVacant
+  //     ? 'vacant'
+  //     : room.current_invoice
+  //       ? invoiceStatusToBadge(room.current_invoice.status)
+  //       : 'pending';
 
   return (
     <View
@@ -134,7 +134,7 @@ export default function RoomCard({ room, onPress }: RoomCardProps) {
                 />
 
                 <Text className="text-lg font-extrabold tracking-tight text-slate-900">
-                  Room {room.room_name}
+                  Room {room.roomName}
                 </Text>
               </View>
 
@@ -147,17 +147,18 @@ export default function RoomCard({ room, onPress }: RoomCardProps) {
                   }}
                 >
                   <Text className="text-[11px] font-semibold" style={{ color: accentColor }}>
-                    {floorLabel(room.floor_id)}
+                    {floorLabel(room.floorId)}
                   </Text>
                 </View>
 
                 <Text className="text-xs font-medium text-slate-500">
-                  Base rent {formatCurrency(room.base_rent_amount)}
+                  Base rent {formatCurrency(room.baseRentAmount)}
                 </Text>
               </View>
             </View>
 
-            <Badge status={badgeStatus} size="sm" />
+            {/* FIx leater:: */}
+            {/* <Badge status={badgeStatus} size="sm" /> */}
           </View>
 
           <View

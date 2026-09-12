@@ -1,6 +1,6 @@
 import { BadgeStatus } from './components/ui/StatusBadge';
 
-export type RoomStatus = 'AVAILABLE' | 'OCCUPIED' | 'MAINTENANCE';
+export type RoomStatus = 'Available' | 'Occupied' | 'Maintenance';
 
 export type ChargeType = 'FIXED' | 'METERED';
 

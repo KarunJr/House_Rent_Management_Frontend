@@ -13,15 +13,16 @@ export interface AddRoomResponse {
   roomDetails: RoomDetails | null;
 }
 
-export interface RoomCard {
+export interface RoomCardDetails {
   id: string;
   roomName: string;
+  floorId: string;
   baseRentAmount: number;
   status: RoomStatus;
-  roomActiveLease: RoomActiveLease | null;
+  activeLease: ActiveLease | null;
 }
 
-interface RoomActiveLease {
+interface ActiveLease {
   id: string;
   monthlyRent: number;
   startDate: string;
@@ -34,5 +35,5 @@ interface RoomActiveLease {
 
 export interface GetRoomRepsonse {
   success: boolean;
-  rooms: RoomCard[];
+  rooms: RoomCardDetails[];
 }

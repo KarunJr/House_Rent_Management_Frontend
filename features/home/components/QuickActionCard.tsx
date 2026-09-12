@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 
 interface QuickActionCardProps {
   label: string;
@@ -7,6 +7,7 @@ interface QuickActionCardProps {
   icon: keyof typeof Ionicons.glyphMap;
   tone: QuickActionTone;
   onPress: () => void;
+  style?: StyleProp<ViewStyle>;
 }
 type QuickActionTone = {
   background: string;
@@ -22,20 +23,24 @@ export default function QuickActionCard({
   icon,
   tone,
   onPress,
+  style,
 }: QuickActionCardProps) {
   return (
     <Pressable
       onPress={onPress}
-      className="min-h-[96px] flex-1 rounded-[26px] border px-4 py-3.5 active:scale-[0.99]"
-      style={{
-        backgroundColor: tone.background,
-        borderColor: tone.border,
-        shadowColor: '#0F172A',
-        shadowOpacity: 0.06,
-        shadowRadius: 14,
-        shadowOffset: { width: 0, height: 8 },
-        elevation: 3,
-      }}
+      className="min-h-[96px] rounded-[26px] border px-4 py-3.5 active:scale-[0.99]"
+      style={[
+        {
+          backgroundColor: tone.background,
+          borderColor: tone.border,
+          shadowColor: '#0F172A',
+          shadowOpacity: 0.06,
+          shadowRadius: 14,
+          shadowOffset: { width: 0, height: 8 },
+          elevation: 3,
+        },
+        style,
+      ]}
     >
       <View className="mb-3 flex-row items-start justify-between gap-3">
         <View

@@ -1,11 +1,12 @@
 import { create } from 'zustand';
 import { RoomFormData } from './room.validation';
 import { addRoomApi, getRoomApi } from './room.api';
-import { AddRoomResponse, GetRoomRepsonse, RoomCard } from './room.types';
+import { AddRoomResponse, GetRoomRepsonse, RoomCardDetails } from './room.types';
 
 interface RoomStore {
   isLoading: boolean;
-  rooms: RoomCard[] | null;
+  rooms: RoomCardDetails[] | null;
+  fetchError: string | null;
 
   addRoom: (data: RoomFormData) => Promise<AddRoomResponse>;
   getRoom: () => Promise<GetRoomRepsonse>;
@@ -14,6 +15,7 @@ interface RoomStore {
 export const useRoomStore = create<RoomStore>()((set) => ({
   isLoading: true,
   rooms: null,
+  fetchError: null,
 
   addRoom: async (data: RoomFormData) => {
     try {
@@ -30,16 +32,21 @@ export const useRoomStore = create<RoomStore>()((set) => ({
   },
 
   getRoom: async () => {
+    set({ isLoading: true, fetchError: null });
     try {
-        const response = await getRoomApi<GetRoomRepsonse>();
-        const result = response.data;
-
-        if(result.success && result.rooms){
-            set({isLoading: false, rooms: result.rooms});
-        }
-        return result;
+      const response = await getRoomApi<GetRoomRepsonse>();
+      const result = response.data;
+      if (result.success && result.rooms) {
+        set({ rooms: result.rooms });
+      } else {
+        throw new Error('Unable to load rooms.');
+      }
+      return result;
     } catch (error) {
-        throw error;
+      set({ fetchError: 'We couldn’t load your rooms. Please try again.' });
+      throw error;
+    } finally {
+      set({ isLoading: false });
     }
   },
 }));
