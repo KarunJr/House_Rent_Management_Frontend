@@ -3,24 +3,18 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
-import type { Lease, Room, Tenant } from '@/features/home/home.types';
+import type { TenantListItem } from '../tenant.types';
 import { Avatar } from '@/features/home/components/ui/Avatar';
-
-export interface TenantListItem {
-  tenant: Tenant;
-  activeLease: Lease | null;
-  room: Room | null;
-}
 
 interface TenantListScreenProps {
   items: TenantListItem[];
   onBack: () => void;
   onAdd: () => void;
-  onTenantPress: (tenantId: number) => void;
+  onTenantPress: (tenantId: string) => void;
 }
 
 export default function TenantListScreen({ items, onBack, onAdd, onTenantPress }: TenantListScreenProps) {
-  const activeTenantCount = items.filter((item) => item.activeLease).length;
+  const activeLeaseCount = items.reduce((count, tenant) => count + tenant.activeLeases.length, 0);
 
   return (
     <SafeAreaView className="flex-1 bg-[#F3F4F6]" edges={['top', 'bottom']}>
@@ -56,13 +50,19 @@ export default function TenantListScreen({ items, onBack, onAdd, onTenantPress }
           </View>
           <View className="flex-1 rounded-2xl border border-teal-100 bg-[#F0FDFA] px-4 py-4">
             <Text className="text-xs font-bold uppercase tracking-[1px] text-teal-700">Active leases</Text>
-            <Text className="mt-2 text-3xl font-extrabold text-teal-700">{activeTenantCount}</Text>
+            <Text className="mt-2 text-3xl font-extrabold text-teal-700">{activeLeaseCount}</Text>
           </View>
         </View>
 
         <Text className="mb-3 text-sm font-bold uppercase tracking-[1px] text-slate-500">All tenants</Text>
         <View className="gap-3">
-          {items.map(({ tenant, activeLease, room }) => (
+          {items.length === 0 && (
+            <View className="rounded-2xl border border-slate-200 bg-white px-4 py-5">
+              <Text className="text-sm font-semibold text-slate-700">No tenants yet</Text>
+              <Text className="mt-1 text-xs leading-5 text-slate-500">Add your first tenant using the + button above.</Text>
+            </View>
+          )}
+          {items.map((tenant) => (
             <Pressable
               key={tenant.id}
               onPress={() => onTenantPress(tenant.id)}
@@ -82,7 +82,9 @@ export default function TenantListScreen({ items, onBack, onAdd, onTenantPress }
                   <Text className="mt-1 text-xs text-slate-500">{tenant.phone}</Text>
                   <View className="mt-2 self-start rounded-full bg-slate-100 px-2.5 py-1">
                     <Text className="text-[11px] font-bold text-slate-600">
-                      {activeLease && room ? `Room ${room.room_name}` : 'No active lease'}
+                      {tenant.activeLeases.length > 0
+                        ? `${tenant.activeLeases.length === 1 ? 'Room' : 'Rooms'} ${tenant.activeLeases.map((lease) => lease.room.roomName).join(', ')}`
+                        : 'No active lease'}
                     </Text>
                   </View>
                 </View>

@@ -19,7 +19,8 @@ export const AddTenantSchema = z.object({
     .optional()
     .or(z.literal(''))
     .transform((value) => value?.trim() ?? '')
-    .refine((value) => value === '' || z.email().safeParse(value).success, {
+    // Match the backend's RequestPatterns.Email, including optional blank emails.
+    .refine((value) => value === '' || /^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$/.test(value), {
       error: 'Invalid email address',
     }),
 });

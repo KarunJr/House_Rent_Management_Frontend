@@ -1,21 +1,22 @@
 import { Stack, router, useLocalSearchParams } from 'expo-router';
-import { Text, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
-import { tenants } from '@/features/home/dummy';
+import { LoadingState } from '@/components/ui/LoadingState';
 import AddTenantScreen from '@/features/tenant/components/AddTenantScreen';
+import { TenantLoadError } from '@/features/tenant/components/TenantLoadError';
+import { useTenantDetails } from '@/features/tenant/hooks/useTenantDetails';
 
 export default function EditTenantRoute() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const insets = useSafeAreaInsets();
-  const tenant = tenants.find((item) => item.id === Number(id)) ?? null;
+  const { tenant, isLoading, error, notFound, retry } = useTenantDetails(id);
 
+  if (isLoading) return <LoadingState message="Loading tenant details" />;
   if (!tenant) {
     return (
-      <View className="flex-1 items-center justify-center bg-slate-100 px-6" style={{ paddingTop: insets.top }}>
-        <Stack.Screen options={{ headerShown: false }} />
-        <Text className="text-xl font-extrabold text-slate-900">Tenant not found</Text>
-      </View>
+      <TenantLoadError
+        title={notFound ? 'Tenant not found' : 'Unable to load tenant'}
+        message={notFound ? 'This tenant could not be found.' : error ?? 'Please try again.'}
+        onBack={() => router.back()}
+        onRetry={retry}
+      />
     );
   }
 
@@ -23,6 +24,7 @@ export default function EditTenantRoute() {
     <>
       <Stack.Screen options={{ headerShown: false, presentation: 'card' }} />
       <AddTenantScreen
+        key={tenant.id}
         tenant={tenant}
         onBack={() => router.back()}
         onSaved={() => router.back()}
