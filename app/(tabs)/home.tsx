@@ -2,12 +2,13 @@ import { Avatar } from '@/features/home/components/ui/Avatar';
 import { toast } from '@/components/toast';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import RoomListState from '@/features/home/components/RoomListState';
 import RoomCard from '@/features/home/components/RoomCard';
 import QuickActionCard from '@/features/home/components/QuickActionCard';
 import { useRoomStore } from '@/features/room/room.store';
+import * as SecureStore from 'expo-secure-store';
 import { useEffect } from 'react';
 
 export default function HomeScreen() {
@@ -17,11 +18,15 @@ export default function HomeScreen() {
   const isLoading = useRoomStore((state) => state.isLoading);
   const fetchError = useRoomStore((state) => state.fetchError);
   useEffect(() => {
-    if (rooms === null) {
-      // The store exposes request failures through fetchError for the inline retry state.
-      void getRooms().catch(() => {});
-    }
-  }, [getRooms, rooms]);
+    // The store exposes request failures through fetchError for the inline retry state.
+    void getRooms().catch((error) => {
+      console.log('Room fetch failed:', {
+        message: error.message,
+        code: error.code,
+        status: error.response?.status,
+      });
+    });
+  }, [getRooms]);
 
   const roomList = rooms ?? [];
   const stats = {
@@ -100,11 +105,17 @@ export default function HomeScreen() {
                 <Text className="text-xs font-semibold text-white/70">{stats.vacant} Vacant</Text>
               </View>
 
-              {stats.vacant > 0 && (
-                <View className="rounded-xl bg-amber-400 px-3 py-2">
-                  <Text className="text-xs font-bold text-amber-900">Assign tenants</Text>
-                </View>
-              )}
+              {/* {stats.vacant > 0 && ( */}
+              <Pressable
+                className="rounded-xl bg-amber-400 px-3 py-2"
+                onPress={() => {
+                  console.log('Pressed');
+                  SecureStore.deleteItemAsync('accessToken');
+                }}
+              >
+                <Text className="text-xs font-bold text-amber-900">Assign tenants</Text>
+              </Pressable>
+              {/* )} */}
             </View>
           </View>
         </LinearGradient>
@@ -191,7 +202,10 @@ export default function HomeScreen() {
             <RoomListState
               isLoading={isLoading}
               error={fetchError}
-              onRetry={() => { void getRooms().catch(() => {}); }}
+              onRetry={() => {
+                console.log('Called');
+                void getRooms().catch(() => {});
+              }}
               onAddRoom={() => router.push('/room/add')}
             />
           ) : (

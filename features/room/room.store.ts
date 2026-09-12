@@ -1,29 +1,60 @@
 import { create } from 'zustand';
+import { addRoomApi, editRoomApi, getRoomApi } from './room.api';
+import { AddRoomResponse, EditRoomResponse, GetRoomRepsonse, RoomCardDetails } from './room.types';
 import { RoomFormData } from './room.validation';
-import { addRoomApi, getRoomApi } from './room.api';
-import { AddRoomResponse, GetRoomRepsonse, RoomCardDetails } from './room.types';
 
 interface RoomStore {
   isLoading: boolean;
-  rooms: RoomCardDetails[] | null;
+  // hasFetched: boolean;
+  rooms: RoomCardDetails[];
   fetchError: string | null;
 
   addRoom: (data: RoomFormData) => Promise<AddRoomResponse>;
+  editRoom: (id: string, data: RoomFormData) => Promise<EditRoomResponse>;
   getRoom: () => Promise<GetRoomRepsonse>;
 }
 
 export const useRoomStore = create<RoomStore>()((set) => ({
   isLoading: true,
-  rooms: null,
+  // hasFetched: false,
+  rooms: [],
   fetchError: null,
+
+  editRoom: async (id, data) => {
+    const { data: result } = await editRoomApi(id, data);
+    const savedRoom = result.roomDetails;
+    if (result.success && savedRoom) {
+      set((state) => ({
+        // PUT does not return activeLease; retain it from the existing list entry.
+        rooms: state.rooms.map((room) =>
+          room.id === savedRoom.id ? { ...room, ...savedRoom } : room,
+        ),
+      }));
+    }
+    return result;
+  },
 
   addRoom: async (data: RoomFormData) => {
     try {
       const response = await addRoomApi<AddRoomResponse>(data);
       const result = response.data;
-      if (result.success && result.roomDetails) {
-        set({ isLoading: false });
+      const room = result.roomDetails;
+      if (result.success && room) {
+        set((state) => ({
+          rooms: [
+            ...state.rooms,
+            {
+              id: room.id,
+              roomName: room.roomName,
+              floorId: room.floorId,
+              baseRentAmount: room.baseRentAmount,
+              status: room.status,
+              activeLease: null,
+            },
+          ],
+        }));
       }
+
       return result;
     } catch (error) {
       set({ isLoading: false });

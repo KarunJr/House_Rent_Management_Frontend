@@ -1,5 +1,6 @@
+import { LoadingState } from '@/components/ui/LoadingState';
 import { Ionicons } from '@expo/vector-icons';
-import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
 interface RoomListStateProps {
   isLoading: boolean;
@@ -24,7 +25,7 @@ export default function RoomListState({
       <View className="mb-5 h-24 w-24 items-center justify-center rounded-full bg-teal-50">
         <View className="h-16 w-16 items-center justify-center rounded-2xl bg-teal-100">
           {isLoading ? (
-            <ActivityIndicator size="large" color="#0F766E" accessibilityLabel="Loading rooms" />
+            <LoadingState variant="inline" accessibilityLabel="Loading rooms" />
           ) : (
             <Ionicons
               name={error ? 'cloud-offline-outline' : 'home-outline'}

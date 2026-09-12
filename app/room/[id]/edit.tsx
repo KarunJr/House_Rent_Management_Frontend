@@ -1,27 +1,23 @@
 import { Stack, router, useLocalSearchParams } from 'expo-router';
-import { Text, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
-import { floors, owner, rooms } from '@/features/home/dummy';
+import { LoadingState } from '@/components/ui/LoadingState';
 import AddRoomScreen from '@/features/room/components/AddRoomScreen';
+import { RoomLoadError } from '@/features/room/components/RoomLoadError';
+import { useRoomDetails } from '@/features/room/hooks/useRoomDetails';
 
 export default function EditRoomRoute() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const insets = useSafeAreaInsets();
-  const room = rooms.find((item) => item.id === Number(id));
-  const ownerFloors = floors
-    .filter((floor) => floor.owner_id === owner.id)
-    .sort((a, b) => a.floor_number - b.floor_number);
+  const { room, isLoading, error, notFound, retry } = useRoomDetails(id);
+
+  if (isLoading) return <LoadingState message="Loading room details" />;
 
   if (!room) {
     return (
-      <View
-        className="flex-1 items-center justify-center bg-slate-100 px-6"
-        style={{ paddingTop: insets.top }}
-      >
-        <Stack.Screen options={{ headerShown: false }} />
-        <Text className="text-xl font-extrabold text-slate-900">Room not found</Text>
-      </View>
+      <RoomLoadError
+        title={notFound ? 'Room not found' : 'Unable to load room'}
+        message={notFound ? 'This room could not be found.' : (error ?? 'Please try again.')}
+        onBack={() => router.back()}
+        onRetry={retry}
+      />
     );
   }
 
@@ -29,7 +25,7 @@ export default function EditRoomRoute() {
     <>
       <Stack.Screen options={{ headerShown: false, presentation: 'card' }} />
       <AddRoomScreen
-        floors={ownerFloors}
+        key={room.id}
         room={room}
         onBack={() => router.back()}
         onSaved={() => router.back()}
