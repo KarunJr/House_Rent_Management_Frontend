@@ -39,7 +39,9 @@ export default function HomeScreen() {
   const occupancyPct =
     stats.totalRooms > 0 ? Math.round((stats.occupied / stats.totalRooms) * 100) : 0;
 
-  const vacantRooms = roomList.filter((room) => room.status === 'Available');
+  const vacantRooms = roomList.filter(
+    (room) => room.status === 'Available' && !room.hasLease && room.activeLease === null,
+  );
   return (
     <View className="flex-1 bg-gray-200" style={{ paddingTop: insets.top }}>
       <ScrollView
@@ -175,7 +177,7 @@ export default function HomeScreen() {
               }}
               onPress={() => {
                 if (!vacantRooms[0]?.id) {
-                  toast.info('No vacant rooms are available right now.', {
+                  toast.info('No rooms are available for a new lease right now.', {
                     title: 'Create Lease',
                   });
                   return;

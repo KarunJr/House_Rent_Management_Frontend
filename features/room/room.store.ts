@@ -25,7 +25,7 @@ export const useRoomStore = create<RoomStore>()((set) => ({
     const savedRoom = result.roomDetails;
     if (result.success && savedRoom) {
       set((state) => ({
-        // PUT does not return activeLease; retain it from the existing list entry.
+        // PUT does not return lease information; retain it from the existing list entry.
         rooms: state.rooms.map((room) =>
           room.id === savedRoom.id ? { ...room, ...savedRoom } : room,
         ),
@@ -49,6 +49,7 @@ export const useRoomStore = create<RoomStore>()((set) => ({
               floorId: room.floorId,
               baseRentAmount: room.baseRentAmount,
               status: room.status,
+              hasLease: false,
               activeLease: null,
             },
           ],

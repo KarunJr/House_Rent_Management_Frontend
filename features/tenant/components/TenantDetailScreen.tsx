@@ -93,6 +93,8 @@ export default function TenantDetailScreen({
               {orderedLeases.map((lease) => {
                 const room = lease.room;
                 const isActive = lease.isActive;
+                const leaseStatus = isActive ? 'Active' : lease.endDate ? 'Ended'
+                  : lease.startDate > new Date().toISOString().slice(0, 10) ? 'Scheduled' : 'Inactive';
 
                 return (
                   <Pressable
@@ -109,7 +111,7 @@ export default function TenantDetailScreen({
                       </View>
                       <View className={`rounded-full px-3 py-1 ${isActive ? 'bg-teal-50' : 'bg-slate-100'}`}>
                         <Text className={`text-[11px] font-bold ${isActive ? 'text-teal-700' : 'text-slate-600'}`}>
-                          {isActive ? 'Active' : 'Ended'}
+                          {leaseStatus}
                         </Text>
                       </View>
                     </View>

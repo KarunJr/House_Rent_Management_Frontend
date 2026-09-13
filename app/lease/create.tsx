@@ -1,39 +1,67 @@
-import CreateLeaseScreen from '@/features/lease/components/CreateLeaseScreen';
-import { roomsWithDetails, tenants } from '@/features/home/dummy';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
-import { Text, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LoadingState } from '@/components/ui/LoadingState';
+import CreateLeaseScreen from '@/features/lease/components/CreateLeaseScreen';
+import { LeaseLoadState } from '@/features/lease/components/LeaseLoadState';
+import { useLeaseOptions } from '@/features/lease/hooks/useLeaseOptions';
 
 export default function CreateLeaseRoute() {
   const { roomId } = useLocalSearchParams<{ roomId?: string }>();
-  const insets = useSafeAreaInsets();
+  const { rooms, tenants, isLoading, error, retry } = useLeaseOptions();
 
-  const availableRooms = roomsWithDetails.filter(
-    (room) => room.status === 'AVAILABLE' && room.active_lease === null,
-  );
-
-  if (availableRooms.length === 0) {
+  if (isLoading) return <LoadingState message="Loading rooms and tenants" />;
+  if (error) {
     return (
-      <View
-        className="flex-1 items-center justify-center bg-slate-100 px-6"
-        style={{ paddingTop: insets.top }}
-      >
-        <Stack.Screen options={{ headerShown: false }} />
-        <Text className="text-xl font-extrabold text-slate-900">No vacant rooms</Text>
-        <Text className="mt-2 text-center text-sm leading-6 text-slate-500">
-          Create a lease after a room becomes available.
-        </Text>
-      </View>
+      <LeaseLoadState
+        title="Unable to load lease details"
+        message={error}
+        onBack={() => router.back()}
+        onRetry={retry}
+      />
     );
   }
-
+  if (rooms.length === 0) {
+    return (
+      <LeaseLoadState
+        title="No rooms available"
+        message="Create a lease after a room becomes available."
+        onBack={() => router.back()}
+        onRetry={retry}
+        actionLabel="Add Room"
+        onAction={() => router.push('/room/add')}
+      />
+    );
+  }
+  if (tenants.length === 0) {
+    return (
+      <LeaseLoadState
+        title="No tenants yet"
+        message="Add a tenant before creating a lease."
+        onBack={() => router.back()}
+        onRetry={retry}
+        actionLabel="Add Tenant"
+        onAction={() => router.push('/tenant/add')}
+      />
+    );
+  }
+  if (roomId && !rooms.some((room) => room.id === roomId)) {
+    return (
+      <LeaseLoadState
+        title="Room unavailable"
+        message="The selected room is no longer available for a new lease."
+        onBack={() => router.back()}
+        onRetry={retry}
+        actionLabel="Choose another room"
+        onAction={() => router.setParams({ roomId: '' })}
+      />
+    );
+  }
   return (
     <>
       <Stack.Screen options={{ headerShown: false, presentation: 'card' }} />
       <CreateLeaseScreen
-        rooms={availableRooms}
+        rooms={rooms}
         tenants={tenants}
-        initialRoomId={roomId ? Number(roomId) : undefined}
+        initialRoomId={roomId}
         onBack={() => router.back()}
         onCreated={() => router.back()}
       />

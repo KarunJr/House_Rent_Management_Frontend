@@ -10,8 +10,8 @@ export const addRoomApi = <T>(data: AddRoomFormData) => {
   return api.post<T>('/v1/api/room', data);
 };
 
-export const getRoomApi = <T>() => {
-  return api.get<T>('/v1/api/room');
+export const getRoomApi = <T>(signal?: AbortSignal) => {
+  return api.get<T>('/v1/api/room', { signal });
 };
 
 export const getSingleRoomApi = <T>(id: string) => {

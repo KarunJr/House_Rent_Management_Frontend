@@ -23,6 +23,8 @@ export interface RoomCardDetails {
   floorId: string;
   baseRentAmount: number;
   status: RoomStatus;
+  /** True for an active lease or an open-ended reservation, not ended lease history. */
+  hasLease: boolean;
   activeLease: ActiveLease | null;
 }
 
