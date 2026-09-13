@@ -64,7 +64,7 @@ const getStatusCopy = (room: RoomCardDetails): StatusCopy => {
     };
   }
 
-  if (room.status === 'Available' || room.activeLease === null) {
+  if (room.status === 'Available' && !room.hasLease && room.activeLease === null) {
     return {
       title: 'Ready for lease',
       description: 'No tenant assigned yet. Open this room to create a new lease.',
@@ -78,8 +78,10 @@ const getStatusCopy = (room: RoomCardDetails): StatusCopy => {
   }
 
   return {
-    title: room.activeLease?.tenant.name ?? 'Current tenant',
-    description: `Tenant since ${formatDate(room.activeLease?.startDate)}`,
+    title: room.activeLease?.tenant.name ?? (room.hasLease ? 'Reserved' : 'Unavailable'),
+    description: room.activeLease
+      ? `Tenant since ${formatDate(room.activeLease.startDate)}`
+      : room.hasLease ? 'This room already has a lease reservation.' : 'This room is not available for a new lease.',
     icon: 'person-outline',
     backgroundColor: '#F8FAFC',
     borderColor: '#E2E8F0',
@@ -91,7 +93,7 @@ const getStatusCopy = (room: RoomCardDetails): StatusCopy => {
 
 export default function RoomCard({ room, onPress }: RoomCardProps) {
   const accentColor = getAccentColor(room.status);
-  const isVacant = room.status === 'Available' || room.activeLease === null;
+  const isVacant = room.status === 'Available' && !room.hasLease && room.activeLease === null;
   const isMaintenance = room.status === 'Maintenance';
   const tenant = room.activeLease?.tenant;
   const rentAmount = room.activeLease?.monthlyRent ?? room.baseRentAmount;
@@ -228,7 +230,7 @@ export default function RoomCard({ room, onPress }: RoomCardProps) {
               style={{ backgroundColor: `${accentColor}10` }}
             >
               <Text className="text-[11px] font-medium uppercase tracking-[0.8px] text-slate-500">
-                {isVacant ? 'Base Rent' : 'Due This Month'}
+                {room.activeLease ? 'Due This Month' : 'Base Rent'}
               </Text>
 
               <Text className="mt-1 text-base font-extrabold text-slate-900">
@@ -242,7 +244,7 @@ export default function RoomCard({ room, onPress }: RoomCardProps) {
               </Text>
 
               <Text className="mt-1 text-sm font-extrabold" style={{ color: accentColor }}>
-                {isMaintenance ? 'Hold' : isVacant ? 'Open' : 'Active'}
+                {isMaintenance ? 'Hold' : isVacant ? 'Open' : room.activeLease ? 'Active' : room.hasLease ? 'Reserved' : 'Unavailable'}
               </Text>
             </View>
           </View>

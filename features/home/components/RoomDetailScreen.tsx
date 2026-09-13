@@ -139,10 +139,10 @@ export default function RoomDetailScreen({
 }: RoomDetailScreenProps) {
   const insets = useSafeAreaInsets();
   const accentColor = getAccentColor(room.status);
-  const isActive = room.activeLease ? true : false;
-  const activeLease = isActive ? room.activeLease : null;
-  const tenant = isActive ? room.activeLease?.tenant : null;
-  const isVacant = room.status === 'Available' || room.activeLease === null;
+  const activeLease = room.activeLease;
+  const tenant = activeLease?.tenant;
+  const isReserved = room.hasLease && !activeLease;
+  const isVacant = room.status === 'Available' && !room.hasLease && room.activeLease === null;
   const isMaintenance = room.status === 'Maintenance';
   const heroImage = ROOM_IMAGES[Number(room.floorId)] ?? ROOM_IMAGES[1];
   const currentRent = room.activeLease?.monthlyRent ?? room.baseRentAmount;
@@ -153,9 +153,9 @@ export default function RoomDetailScreen({
         <ScrollView
           contentContainerStyle={{
             paddingTop: 8,
-            paddingBottom: isVacant
-              ? Math.max(insets.bottom + 24, 32)
-              : Math.max(insets.bottom + 96, 118),
+            paddingBottom: activeLease
+              ? Math.max(insets.bottom + 96, 118)
+              : Math.max(insets.bottom + 24, 32),
           }}
           showsVerticalScrollIndicator={false}
         >
@@ -199,7 +199,7 @@ export default function RoomDetailScreen({
                       ? 'Maintenance in progress'
                       : isVacant
                         ? 'Available for new tenant'
-                        : 'Active rental unit'}
+                        : isReserved ? 'Reserved for a tenant' : activeLease ? 'Active rental unit' : 'Room unavailable'}
                   </Text>
                 </View>
               </ImageBackground>
@@ -207,7 +207,7 @@ export default function RoomDetailScreen({
               <View style={styles.heroCard}>
                 <View style={styles.specRow}>
                   <SpecItem icon="layers-outline" value={room.floorId} label="Floor" />
-                  <SpecItem icon="person-outline" value={isVacant ? '0' : '1'} label="Tenant" />
+                  <SpecItem icon="person-outline" value={activeLease ? '1' : '0'} label="Tenant" />
                   {/* <SpecItem
                     icon="document-text-outline"
                     value={currentInvoice ? formatMonthYear(currentInvoice.billing_month).split(' ')[0] : 'No'}
@@ -230,33 +230,33 @@ export default function RoomDetailScreen({
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>TENANT</Text>
 
-              {isVacant ? (
+              {!activeLease ? (
                 <View style={styles.card}>
                   <View style={styles.emptyStateIcon}>
                     <Ionicons name="person-add-outline" size={24} color={accentColor} />
                   </View>
                   <Text style={styles.emptyStateTitle}>
-                    {isMaintenance ? 'Room unavailable right now' : 'No tenant assigned'}
+                    {isMaintenance ? 'Room unavailable right now' : isReserved ? 'Room reserved' : 'No tenant assigned'}
                   </Text>
                   <Text style={styles.emptyStateText}>
                     {isMaintenance
                       ? 'Assigning a tenant will make sense after maintenance is complete.'
-                      : 'This room is open and ready for a new lease.'}
+                      : isReserved ? 'This room already has a lease reservation.'
+                        : isVacant ? 'This room is open and ready for a new lease.' : 'This room is not available for a new lease.'}
                   </Text>
                 </View>
               ) : (
                 <View style={styles.card}>
                   <Pressable
-                    onPress={() => onTenantPress(room.activeLease!.tenant.id)}
+                    onPress={() => onTenantPress(activeLease.tenant.id)}
                     style={styles.tenantHeader}
                   >
-                    <Avatar name={room.activeLease!.tenant.name} size={50} />
+                    <Avatar name={activeLease.tenant.name} size={50} />
 
                     <View style={styles.tenantMeta}>
                       <Text style={styles.tenantName}>{tenant?.name}</Text>
-                      <Text style={styles.tenantLine}>{tenant?.name}</Text>
                       <Text style={styles.tenantLine}>
-                        Tenant since {formatMonthYear(activeLease!.startDate)}
+                        Tenant since {formatMonthYear(activeLease.startDate)}
                       </Text>
                     </View>
                     <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
@@ -340,7 +340,7 @@ export default function RoomDetailScreen({
           </View>
         </ScrollView>
 
-        {!isVacant ? (
+        {activeLease ? (
           <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 14) }]}>
             <View style={styles.footerActions}>
               <Pressable style={[styles.footerButton, { backgroundColor: accentColor }]}>

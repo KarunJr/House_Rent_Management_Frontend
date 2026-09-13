@@ -87,7 +87,7 @@ export const rooms: Room[] = [
     floor_id: '1',
     room_name: '101',
     base_rent_amount: 18000,
-    status: 'OCCUPIED',
+    status: 'Occupied',
     created_at: '2026-01-01T00:00:00Z',
   },
   {
@@ -95,7 +95,7 @@ export const rooms: Room[] = [
     floor_id: '1',
     room_name: '102',
     base_rent_amount: 18000,
-    status: 'OCCUPIED',
+    status: 'Occupied',
     created_at: '2026-01-01T00:00:00Z',
   },
   {
@@ -103,7 +103,7 @@ export const rooms: Room[] = [
     floor_id: '1',
     room_name: '103',
     base_rent_amount: 16000,
-    status: 'AVAILABLE',
+    status: 'Available',
     created_at: '2026-01-01T00:00:00Z',
   },
   {
@@ -111,7 +111,7 @@ export const rooms: Room[] = [
     floor_id: '2',
     room_name: '201',
     base_rent_amount: 20000,
-    status: 'OCCUPIED',
+    status: 'Occupied',
     created_at: '2026-01-01T00:00:00Z',
   },
   {
@@ -119,7 +119,7 @@ export const rooms: Room[] = [
     floor_id: '2',
     room_name: '202',
     base_rent_amount: 20000,
-    status: 'OCCUPIED',
+    status: 'Occupied',
     created_at: '2026-01-01T00:00:00Z',
   },
   {
@@ -127,7 +127,7 @@ export const rooms: Room[] = [
     floor_id: '3',
     room_name: '301',
     base_rent_amount: 22000,
-    status: 'OCCUPIED',
+    status: 'Occupied',
     created_at: '2026-01-01T00:00:00Z',
   },
   {
@@ -135,7 +135,7 @@ export const rooms: Room[] = [
     floor_id: '3',
     room_name: '302',
     base_rent_amount: 22000,
-    status: 'AVAILABLE',
+    status: 'Available',
     created_at: '2026-01-01T00:00:00Z',
   },
   {
@@ -143,7 +143,7 @@ export const rooms: Room[] = [
     floor_id: '3',
     room_name: '302',
     base_rent_amount: 22000,
-    status: 'MAINTENANCE',
+    status: 'Maintenance',
     created_at: '2026-01-01T00:00:00Z',
   },
 ];
@@ -316,11 +316,11 @@ export const roomsWithDetails: RoomWithDetails[] = rooms.map((room) => {
 // export const stats = {
 //   totalRooms: rooms.length,
 
-//   occupied: rooms.filter((room) => room.status === 'OCCUPIED').length,
+//   occupied: rooms.filter((room) => room.status === 'Occupied').length,
 
-//   vacant: rooms.filter((room) => room.status === 'AVAILABLE').length,
+//   vacant: rooms.filter((room) => room.status === 'Available').length,
 
-//   maintenance: rooms.filter((room) => room.status === 'MAINTENANCE').length,
+//   maintenance: rooms.filter((room) => room.status === 'Maintenance').length,
 
 //   pendingPayments: invoices.filter(
 //     (invoice) =>

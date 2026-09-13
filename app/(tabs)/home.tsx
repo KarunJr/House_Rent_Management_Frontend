@@ -8,7 +8,6 @@ import RoomListState from '@/features/home/components/RoomListState';
 import RoomCard from '@/features/home/components/RoomCard';
 import QuickActionCard from '@/features/home/components/QuickActionCard';
 import { useRoomStore } from '@/features/room/room.store';
-import * as SecureStore from 'expo-secure-store';
 import { useEffect } from 'react';
 
 export default function HomeScreen() {
@@ -27,21 +26,22 @@ export default function HomeScreen() {
       });
     });
   }, [getRooms]);
-
   const roomList = rooms ?? [];
+  console.log('Rooms:', roomList);
+  const vacantRooms = roomList.filter(
+    (room) => room.status === 'Available' && !room.hasLease && room.activeLease === null,
+  );
+  console.log('Vacant Rooms:', vacantRooms);
   const stats = {
     totalRooms: roomList.length,
 
     occupied: roomList.filter((room) => room.status === 'Occupied').length,
 
-    vacant: roomList.filter((room) => room.status === 'Available').length,
+    vacant: vacantRooms.length,
   };
   const occupancyPct =
     stats.totalRooms > 0 ? Math.round((stats.occupied / stats.totalRooms) * 100) : 0;
 
-  const vacantRooms = roomList.filter(
-    (room) => room.status === 'Available' && !room.hasLease && room.activeLease === null,
-  );
   return (
     <View className="flex-1 bg-gray-200" style={{ paddingTop: insets.top }}>
       <ScrollView
@@ -84,11 +84,6 @@ export default function HomeScreen() {
               {occupancyPct}% Occupied
             </Text>
 
-            <Text className="mb-4 text-base font-semibold text-white/70">
-              {/* {stats.pendingPayments} payments still pending */}
-              Need to fix- payments still pending
-            </Text>
-
             <View className="mb-4 h-2 overflow-hidden rounded-full bg-white/20">
               <View
                 className="h-full rounded-full bg-[#14B8A6]"
@@ -110,10 +105,7 @@ export default function HomeScreen() {
               {/* {stats.vacant > 0 && ( */}
               <Pressable
                 className="rounded-xl bg-amber-400 px-3 py-2"
-                onPress={() => {
-                  console.log('Pressed');
-                  SecureStore.deleteItemAsync('accessToken');
-                }}
+                onPress={() => router.push('/lease/create')}
               >
                 <Text className="text-xs font-bold text-amber-900">Assign tenants</Text>
               </Pressable>
