@@ -15,23 +15,26 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { toast } from '@/components/toast';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { Fonts } from '@/constants/theme';
-import type { Floor, Room, RoomStatus } from '@/features/home/home.types';
+import type { RoomStatus } from '@/features/home/home.types';
 
+import { handleError } from '@/helpers/axios.error';
 import { AddRoomFormData, AddRoomFormInput, AddRoomSchema } from '../room.validation';
+import { useRoomStore } from '../room.store';
+import type { RoomCardDetails } from '../room.types';
 
 const STATUS_OPTIONS: {
   label: string;
-  value: Extract<RoomStatus, 'AVAILABLE' | 'MAINTENANCE'>;
+  value: Extract<RoomStatus, 'Available' | 'Maintenance'>;
   helper: string;
 }[] = [
   {
     label: 'Available',
-    value: 'AVAILABLE',
+    value: 'Available',
     helper: 'Ready for a new tenant',
   },
   {
     label: 'Maintenance',
-    value: 'MAINTENANCE',
+    value: 'Maintenance',
     helper: 'Temporarily unavailable',
   },
 ];
@@ -54,24 +57,27 @@ const floorLabel = (floorNumber: number) => {
       return `${floorNumber}th Floor`;
   }
 };
-
+const floors = [
+  { id: '1', floor_number: 1 },
+  { id: '2', floor_number: 2 },
+];
 interface AddRoomScreenProps {
-  floors: Floor[];
   onBack: () => void;
   onSaved: () => void;
-  room?: Room;
+  room?: RoomCardDetails;
 }
 
-export default function AddRoomScreen({ floors, onBack, onSaved, room }: AddRoomScreenProps) {
+export default function AddRoomScreen({ onBack, onSaved, room }: AddRoomScreenProps) {
   const isEditing = Boolean(room);
-  const isOccupied = room?.status === 'OCCUPIED';
-  const formDefaults = {
-    roomName: room?.room_name ?? '',
-    floorId: room?.floor_id ?? floors[0]?.id ?? '',
-    baseRentAmount: room?.base_rent_amount ?? '',
-    status: room?.status ?? 'AVAILABLE',
+  const isOccupied = room?.status === 'Occupied' || Boolean(room?.activeLease);
+  const formDefaults: AddRoomFormInput = {
+    roomName: room?.roomName ?? '',
+    floorId: room?.floorId ?? floors[0]?.id ?? '',
+    baseRentAmount: room?.baseRentAmount ?? '',
+    status: room?.status ?? 'Available',
   };
-
+  const addRoom = useRoomStore((state) => state.addRoom);
+  const editRoom = useRoomStore((state) => state.editRoom);
   const {
     control,
     handleSubmit,
@@ -88,11 +94,25 @@ export default function AddRoomScreen({ floors, onBack, onSaved, room }: AddRoom
   const selectedFloorId = watch('floorId');
 
   const onSubmit = async (data: AddRoomFormData) => {
-    toast.success(`Room ${data.roomName.trim().toUpperCase()} is ready to save.`, {
-      title: isEditing ? 'Room updated' : 'Room created',
-    });
-    console.log('Room form data', data);
-    onSaved();
+    try {
+      const response = room ? await editRoom(room.id, data) : await addRoom(data);
+      if (!response.success || !response.roomDetails) {
+        toast.error(response.message || 'Unable to save the room. Please try again.', {
+          title: 'Room not saved',
+        });
+        return;
+      }
+
+      toast.success(`Room ${response.roomDetails.roomName} has been ${isEditing ? 'updated' : 'created'}.`, {
+        title: isEditing ? 'Room updated' : 'Room created',
+      });
+      onSaved();
+    } catch (error) {
+      const apiError = handleError(error);
+      toast.error(apiError.message, {
+        title: 'Please try again',
+      });
+    }
   };
 
   return (
@@ -111,7 +131,7 @@ export default function AddRoomScreen({ floors, onBack, onSaved, room }: AddRoom
 
           <View className="mb-6">
             <Text className="text-3xl font-extrabold tracking-tight text-slate-900">
-              {isEditing ? `Update Room ${room?.room_name}` : 'Create a new room'}
+              {isEditing ? `Update Room ${room?.roomName}` : 'Create a new room'}
             </Text>
             <Text className="mt-2 text-sm leading-6 text-slate-500">
               {isEditing
@@ -147,39 +167,58 @@ export default function AddRoomScreen({ floors, onBack, onSaved, room }: AddRoom
 
             <View className="gap-1.5">
               <Text className="text-sm font-semibold text-slate-700">Floor</Text>
-              <View className="flex-row flex-wrap gap-3">
-                {floors.map((floor) => {
-                  const isSelected = selectedFloorId === floor.id;
+              {isEditing ? (
+                <Controller
+                  control={control}
+                  name="floorId"
+                  render={({ field: { onBlur, onChange, value } }) => (
+                    <TextInput
+                      className="rounded-2xl border border-slate-200 bg-white px-4 py-4 text-base text-slate-900"
+                      style={{ fontFamily: Fonts.sans }}
+                      placeholder="Example: 3"
+                      placeholderTextColor="#94A3B8"
+                      keyboardType="number-pad"
+                      onBlur={onBlur}
+                      onChangeText={onChange}
+                      value={value}
+                    />
+                  )}
+                />
+              ) : (
+                <View className="flex-row flex-wrap gap-3">
+                  {floors.map((floor) => {
+                    const isSelected = selectedFloorId === floor.id;
 
-                  return (
-                    <Controller
-                      key={floor.id}
-                      control={control}
-                      name="floorId"
-                      render={({ field: { onChange } }) => (
-                        <Pressable
-                          onPress={() => onChange(floor.id)}
-                          className="min-w-[108px] rounded-2xl border px-4 py-3"
-                          style={{
-                            backgroundColor: isSelected ? '#E8F2FF' : '#FFFFFF',
-                            borderColor: isSelected ? '#2563EB' : '#E2E8F0',
-                          }}
-                        >
-                          <Text
-                            className="text-sm font-bold"
-                            style={{ color: isSelected ? '#1D4ED8' : '#0F172A' }}
+                    return (
+                      <Controller
+                        key={floor.id}
+                        control={control}
+                        name="floorId"
+                        render={({ field: { onChange } }) => (
+                          <Pressable
+                            onPress={() => onChange(floor.id)}
+                            className="min-w-[108px] rounded-2xl border px-4 py-3"
+                            style={{
+                              backgroundColor: isSelected ? '#E8F2FF' : '#FFFFFF',
+                              borderColor: isSelected ? '#2563EB' : '#E2E8F0',
+                            }}
                           >
-                            {floorLabel(floor.floor_number)}
-                          </Text>
-                          <Text className="mt-1 text-xs text-slate-500">
-                            Floor {floor.floor_number}
-                          </Text>
-                        </Pressable>
+                            <Text
+                              className="text-sm font-bold"
+                              style={{ color: isSelected ? '#1D4ED8' : '#0F172A' }}
+                            >
+                              {floorLabel(floor.floor_number)}
+                            </Text>
+                            <Text className="mt-1 text-xs text-slate-500">
+                              Floor {floor.floor_number}
+                            </Text>
+                          </Pressable>
                       )}
                     />
                   );
                 })}
               </View>
+              )}
               {errors.floorId && (
                 <Text className="text-xs text-red-500">{errors.floorId.message}</Text>
               )}
@@ -196,9 +235,9 @@ export default function AddRoomScreen({ floors, onBack, onSaved, room }: AddRoom
                     style={{ fontFamily: Fonts.sans }}
                     placeholder="18000"
                     placeholderTextColor="#94A3B8"
-                    keyboardType="number-pad"
+                    keyboardType="decimal-pad"
                     onBlur={onBlur}
-                    onChangeText={(text) => onChange(text.replace(/[^0-9]/g, ''))}
+                    onChangeText={(text) => onChange(text.replace(/[^0-9.]/g, ''))}
                     value={value ? String(value) : ''}
                   />
                 )}
@@ -215,9 +254,12 @@ export default function AddRoomScreen({ floors, onBack, onSaved, room }: AddRoom
                   <View className="flex-row items-start gap-3">
                     <Ionicons name="key-outline" size={20} color="#B45309" />
                     <View className="flex-1">
-                      <Text className="text-sm font-bold text-amber-900">Occupied by an active lease</Text>
+                      <Text className="text-sm font-bold text-amber-900">
+                        Occupied by an active lease
+                      </Text>
                       <Text className="mt-1 text-xs leading-5 text-amber-800">
-                        Use End Lease when the tenant leaves. That action will make this room available.
+                        Use End Lease when the tenant leaves. That action will make this room
+                        available.
                       </Text>
                     </View>
                   </View>
@@ -240,8 +282,12 @@ export default function AddRoomScreen({ floors, onBack, onSaved, room }: AddRoom
                           >
                             <View className="flex-row items-center justify-between">
                               <View>
-                                <Text className="text-sm font-bold text-slate-900">{option.label}</Text>
-                                <Text className="mt-1 text-xs leading-5 text-slate-500">{option.helper}</Text>
+                                <Text className="text-sm font-bold text-slate-900">
+                                  {option.label}
+                                </Text>
+                                <Text className="mt-1 text-xs leading-5 text-slate-500">
+                                  {option.helper}
+                                </Text>
                               </View>
                               <View
                                 className="h-5 w-5 items-center justify-center rounded-full border-2"
@@ -250,7 +296,9 @@ export default function AddRoomScreen({ floors, onBack, onSaved, room }: AddRoom
                                   backgroundColor: isSelected ? '#0D1F3C' : '#FFFFFF',
                                 }}
                               >
-                                {isSelected && <Ionicons name="checkmark" size={12} color="#FFFFFF" />}
+                                {isSelected && (
+                                  <Ionicons name="checkmark" size={12} color="#FFFFFF" />
+                                )}
                               </View>
                             </View>
                           </Pressable>
@@ -259,6 +307,9 @@ export default function AddRoomScreen({ floors, onBack, onSaved, room }: AddRoom
                     );
                   })}
                 </View>
+              )}
+              {errors.status && (
+                <Text className="text-xs text-red-500">{errors.status.message}</Text>
               )}
             </View>
           </View>
@@ -280,7 +331,7 @@ export default function AddRoomScreen({ floors, onBack, onSaved, room }: AddRoom
               }}
             >
               <Text className="text-base font-bold text-white">
-                {isEditing ? 'Save Changes' : 'Save Room'}
+                {isSubmitting ? 'Saving…' : isEditing ? 'Save Changes' : 'Save Room'}
               </Text>
             </Pressable>
           </View>

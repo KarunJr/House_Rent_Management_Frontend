@@ -1,6 +1,6 @@
 import type {
   BillInvoice,
-  Floor,
+  // Floor,
   Lease,
   Owner,
   Payment,
@@ -17,26 +17,26 @@ export const owner: Owner = {
   updated_at: '2026-08-30T00:00:00Z',
 };
 
-export const floors: Floor[] = [
-  {
-    id: 1,
-    owner_id: 1,
-    floor_number: 1,
-    created_at: '2026-01-01T00:00:00Z',
-  },
-  {
-    id: 2,
-    owner_id: 1,
-    floor_number: 2,
-    created_at: '2026-01-01T00:00:00Z',
-  },
-  {
-    id: 3,
-    owner_id: 1,
-    floor_number: 3,
-    created_at: '2026-01-01T00:00:00Z',
-  },
-];
+// export const floors: Floor[] = [
+//   {
+//     id: 1,
+//     owner_id: 1,
+//     floor_number: 1,
+//     created_at: '2026-01-01T00:00:00Z',
+//   },
+//   {
+//     id: 2,
+//     owner_id: 1,
+//     floor_number: 2,
+//     created_at: '2026-01-01T00:00:00Z',
+//   },
+//   {
+//     id: 3,
+//     owner_id: 1,
+//     floor_number: 3,
+//     created_at: '2026-01-01T00:00:00Z',
+//   },
+// ];
 
 export const tenants: Tenant[] = [
   {
@@ -84,66 +84,66 @@ export const tenants: Tenant[] = [
 export const rooms: Room[] = [
   {
     id: 1,
-    floor_id: 1,
+    floor_id: '1',
     room_name: '101',
     base_rent_amount: 18000,
-    status: 'OCCUPIED',
+    status: 'Occupied',
     created_at: '2026-01-01T00:00:00Z',
   },
   {
     id: 2,
-    floor_id: 1,
+    floor_id: '1',
     room_name: '102',
     base_rent_amount: 18000,
-    status: 'OCCUPIED',
+    status: 'Occupied',
     created_at: '2026-01-01T00:00:00Z',
   },
   {
     id: 3,
-    floor_id: 1,
+    floor_id: '1',
     room_name: '103',
     base_rent_amount: 16000,
-    status: 'AVAILABLE',
+    status: 'Available',
     created_at: '2026-01-01T00:00:00Z',
   },
   {
     id: 4,
-    floor_id: 2,
+    floor_id: '2',
     room_name: '201',
     base_rent_amount: 20000,
-    status: 'OCCUPIED',
+    status: 'Occupied',
     created_at: '2026-01-01T00:00:00Z',
   },
   {
     id: 5,
-    floor_id: 2,
+    floor_id: '2',
     room_name: '202',
     base_rent_amount: 20000,
-    status: 'OCCUPIED',
+    status: 'Occupied',
     created_at: '2026-01-01T00:00:00Z',
   },
   {
     id: 6,
-    floor_id: 3,
+    floor_id: '3',
     room_name: '301',
     base_rent_amount: 22000,
-    status: 'OCCUPIED',
+    status: 'Occupied',
     created_at: '2026-01-01T00:00:00Z',
   },
   {
     id: 7,
-    floor_id: 3,
+    floor_id: '3',
     room_name: '302',
     base_rent_amount: 22000,
-    status: 'AVAILABLE',
+    status: 'Available',
     created_at: '2026-01-01T00:00:00Z',
   },
   {
     id: 8,
-    floor_id: 3,
+    floor_id: '3',
     room_name: '302',
     base_rent_amount: 22000,
-    status: 'MAINTENANCE',
+    status: 'Maintenance',
     created_at: '2026-01-01T00:00:00Z',
   },
 ];
@@ -292,7 +292,7 @@ export const payments: Payment[] = [
 ];
 
 export const roomsWithDetails: RoomWithDetails[] = rooms.map((room) => {
-  const floor = floors.find((f) => f.id === room.floor_id)!;
+  // const floor = floors.find((f) => f.id === room.floor_id)!;
 
   const lease = leases.find((l) => l.room_id === room.id && l.is_active) ?? null;
 
@@ -306,28 +306,28 @@ export const roomsWithDetails: RoomWithDetails[] = rooms.map((room) => {
 
   return {
     ...room,
-    floor,
+    // floor,
     active_lease: lease,
     tenant,
     current_invoice: currentInvoice,
   };
 });
 
-export const stats = {
-  totalRooms: rooms.length,
+// export const stats = {
+//   totalRooms: rooms.length,
 
-  occupied: rooms.filter((room) => room.status === 'OCCUPIED').length,
+//   occupied: rooms.filter((room) => room.status === 'Occupied').length,
 
-  vacant: rooms.filter((room) => room.status === 'AVAILABLE').length,
+//   vacant: rooms.filter((room) => room.status === 'Available').length,
 
-  maintenance: rooms.filter((room) => room.status === 'MAINTENANCE').length,
+//   maintenance: rooms.filter((room) => room.status === 'Maintenance').length,
 
-  pendingPayments: invoices.filter(
-    (invoice) =>
-      invoice.status === 'PENDING' || invoice.status === 'OVERDUE' || invoice.status === 'PARTIAL',
-  ).length,
+//   pendingPayments: invoices.filter(
+//     (invoice) =>
+//       invoice.status === 'PENDING' || invoice.status === 'OVERDUE' || invoice.status === 'PARTIAL',
+//   ).length,
 
-  monthlyRevenue: payments
-    .filter((payment) => payment.paid_at.startsWith('2026-08'))
-    .reduce((sum, payment) => sum + payment.amount, 0),
-};
+//   monthlyRevenue: payments
+//     .filter((payment) => payment.paid_at.startsWith('2026-08'))
+//     .reduce((sum, payment) => sum + payment.amount, 0),
+// };

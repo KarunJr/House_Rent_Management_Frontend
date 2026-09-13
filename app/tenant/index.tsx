@@ -1,28 +1,29 @@
 import { type Href, Stack, router } from 'expo-router';
-
-import TenantListScreen, {
-  type TenantListItem,
-} from '@/features/tenant/components/TenantListScreen';
-import { leases, rooms, tenants } from '@/features/home/dummy';
+import { LoadingState } from '@/components/ui/LoadingState';
+import TenantListScreen from '@/features/tenant/components/TenantListScreen';
+import { TenantLoadError } from '@/features/tenant/components/TenantLoadError';
+import { useTenantList } from '@/features/tenant/hooks/useTenantList';
 
 export default function TenantListRoute() {
-  const items: TenantListItem[] = tenants
-    .map((tenant) => {
-      const activeLease =
-        leases.find((lease) => lease.tenant_id === tenant.id && lease.is_active) ?? null;
-      const room = activeLease
-        ? (rooms.find((item) => item.id === activeLease.room_id) ?? null)
-        : null;
+  const { tenants, isLoading, error, retry } = useTenantList();
 
-      return { tenant, activeLease, room };
-    })
-    .sort((a, b) => Number(Boolean(b.activeLease)) - Number(Boolean(a.activeLease)));
+  if (isLoading) return <LoadingState message="Loading tenants" />;
+  if (error) {
+    return (
+      <TenantLoadError
+        title="Unable to load tenants"
+        message={error}
+        onBack={() => router.back()}
+        onRetry={retry}
+      />
+    );
+  }
 
   return (
     <>
       <Stack.Screen options={{ headerShown: false, presentation: 'card' }} />
       <TenantListScreen
-        items={items}
+        items={tenants}
         onBack={() => router.back()}
         onAdd={() => router.push('/tenant/add')}
         onTenantPress={(tenantId) => router.push(`/tenant/${tenantId}` as Href)}

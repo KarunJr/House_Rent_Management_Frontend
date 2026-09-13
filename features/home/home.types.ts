@@ -1,6 +1,6 @@
 import { BadgeStatus } from './components/ui/StatusBadge';
 
-export type RoomStatus = 'AVAILABLE' | 'OCCUPIED' | 'MAINTENANCE';
+export type RoomStatus = 'Available' | 'Occupied' | 'Maintenance';
 
 export type ChargeType = 'FIXED' | 'METERED';
 
@@ -23,16 +23,16 @@ export interface Tenant {
   updated_at: string;
 }
 
-export interface Floor {
-  id: number;
-  owner_id: number;
-  floor_number: number;
-  created_at: string;
-}
+// export interface Floor {
+//   id: number;
+//   owner_id: number;
+//   floor_number: number;
+//   created_at: string;
+// }
 
 export interface Room {
   id: number;
-  floor_id: number;
+  floor_id: string;
   room_name: string;
   base_rent_amount: number;
   status: RoomStatus;
@@ -114,7 +114,7 @@ export interface Payment {
  * → invoice
  */
 export interface RoomWithDetails extends Room {
-  floor: Floor;
+  // floor: Floor;
 
   active_lease: Lease | null;
 

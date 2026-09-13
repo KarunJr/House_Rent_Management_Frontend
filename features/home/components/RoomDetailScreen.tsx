@@ -3,18 +3,19 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { ImageBackground, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import type { BillInvoice, Payment, RoomWithDetails } from '../home.types';
+// import type { BillInvoice, Payment, RoomWithDetails } from '../home.types';
 import { Avatar } from './ui/Avatar';
-import Badge from './ui/StatusBadge';
+// import Badge from './ui/StatusBadge';
+import { RoomCardDetails } from '@/features/room/room.types';
 
 interface RoomDetailScreenProps {
-  room: RoomWithDetails;
-  invoiceHistory: BillInvoice[];
-  payments: Payment[];
+  room: RoomCardDetails;
+  // invoiceHistory: BillInvoice[];
+  // payments: Payment[];
   onBack: () => void;
   onEdit: () => void;
   onEndLease: () => void;
-  onTenantPress: (tenantId: number) => void;
+  onTenantPress: (tenantId: string) => void;
 }
 
 const ROOM_IMAGES: Record<number, string> = {
@@ -23,22 +24,22 @@ const ROOM_IMAGES: Record<number, string> = {
   3: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=1200&h=900&fit=crop&auto=format',
 };
 
-const floorLabel = (floorNumber: number) => {
-  if (floorNumber === 1) return '1st Floor';
-  if (floorNumber === 2) return '2nd Floor';
-  if (floorNumber === 3) return '3rd Floor';
+const floorLabel = (floorNumber: string) => {
+  if (floorNumber === '1') return '1st Floor';
+  if (floorNumber === '2') return '2nd Floor';
+  if (floorNumber === '3') return '3rd Floor';
 
   return `${floorNumber}th Floor`;
 };
 
 const formatCurrency = (amount: number) => `रू ${amount.toLocaleString('en-IN')}`;
 
-const formatShortDate = (date: string) =>
-  new Date(date).toLocaleDateString('en-US', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  });
+// const formatShortDate = (date: string) =>
+//   new Date(date).toLocaleDateString('en-US', {
+//     day: 'numeric',
+//     month: 'short',
+//     year: 'numeric',
+//   });
 
 const formatMonthYear = (date: string) =>
   new Date(date).toLocaleDateString('en-US', {
@@ -46,13 +47,13 @@ const formatMonthYear = (date: string) =>
     year: 'numeric',
   });
 
-const getAccentColor = (status: RoomWithDetails['status']) => {
+const getAccentColor = (status: RoomCardDetails['status']) => {
   switch (status) {
-    case 'OCCUPIED':
+    case 'Occupied':
       return '#22C7B8';
-    case 'AVAILABLE':
+    case 'Available':
       return '#F59E0B';
-    case 'MAINTENANCE':
+    case 'Maintenance':
       return '#F97316';
     default:
       return '#64748B';
@@ -68,6 +69,7 @@ const getAccentColor = (status: RoomWithDetails['status']) => {
 //   if (room.current_invoice?.status === 'CANCELLED') return 'cancelled' as const;
 //   return 'pending' as const;
 // };
+/*
 
 const paymentTone = (status: BillInvoice['status']) => {
   switch (status) {
@@ -108,6 +110,7 @@ const paymentTone = (status: BillInvoice['status']) => {
       };
   }
 };
+*/
 
 const SpecItem = ({
   icon,
@@ -127,8 +130,8 @@ const SpecItem = ({
 
 export default function RoomDetailScreen({
   room,
-  invoiceHistory,
-  payments,
+  // invoiceHistory,
+  // payments,
   onBack,
   onEdit,
   onEndLease,
@@ -136,10 +139,13 @@ export default function RoomDetailScreen({
 }: RoomDetailScreenProps) {
   const insets = useSafeAreaInsets();
   const accentColor = getAccentColor(room.status);
-  const isVacant = room.status === 'AVAILABLE' || room.active_lease === null;
-  const isMaintenance = room.status === 'MAINTENANCE';
-  const heroImage = ROOM_IMAGES[room.floor.floor_number] ?? ROOM_IMAGES[1];
-  const currentRent = room.active_lease?.monthly_rent ?? room.base_rent_amount;
+  const activeLease = room.activeLease;
+  const tenant = activeLease?.tenant;
+  const isReserved = room.hasLease && !activeLease;
+  const isVacant = room.status === 'Available' && !room.hasLease && room.activeLease === null;
+  const isMaintenance = room.status === 'Maintenance';
+  const heroImage = ROOM_IMAGES[Number(room.floorId)] ?? ROOM_IMAGES[1];
+  const currentRent = room.activeLease?.monthlyRent ?? room.baseRentAmount;
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
@@ -147,9 +153,9 @@ export default function RoomDetailScreen({
         <ScrollView
           contentContainerStyle={{
             paddingTop: 8,
-            paddingBottom: isVacant
-              ? Math.max(insets.bottom + 24, 32)
-              : Math.max(insets.bottom + 96, 118),
+            paddingBottom: activeLease
+              ? Math.max(insets.bottom + 96, 118)
+              : Math.max(insets.bottom + 24, 32),
           }}
           showsVerticalScrollIndicator={false}
         >
@@ -178,7 +184,7 @@ export default function RoomDetailScreen({
 
                   <View style={styles.heroActions}>
                     <View style={[styles.floorChip, { backgroundColor: accentColor }]}>
-                      <Text style={styles.floorChipText}>{floorLabel(room.floor.floor_number)}</Text>
+                      <Text style={styles.floorChipText}>{floorLabel(room.floorId)}</Text>
                     </View>
                     <Pressable onPress={onEdit} style={styles.editButton}>
                       <Ionicons name="pencil-outline" size={18} color="#0F172A" />
@@ -187,25 +193,21 @@ export default function RoomDetailScreen({
                 </View>
 
                 <View style={styles.heroTitleBlock}>
-                  <Text style={styles.heroTitle}>Room {room.room_name}</Text>
+                  <Text style={styles.heroTitle}>Room {room.roomName}</Text>
                   <Text style={styles.heroSubtitle}>
                     {isMaintenance
                       ? 'Maintenance in progress'
                       : isVacant
                         ? 'Available for new tenant'
-                        : 'Active rental unit'}
+                        : isReserved ? 'Reserved for a tenant' : activeLease ? 'Active rental unit' : 'Room unavailable'}
                   </Text>
                 </View>
               </ImageBackground>
 
               <View style={styles.heroCard}>
                 <View style={styles.specRow}>
-                  <SpecItem
-                    icon="layers-outline"
-                    value={String(room.floor.floor_number)}
-                    label="Floor"
-                  />
-                  <SpecItem icon="person-outline" value={isVacant ? '0' : '1'} label="Tenant" />
+                  <SpecItem icon="layers-outline" value={room.floorId} label="Floor" />
+                  <SpecItem icon="person-outline" value={activeLease ? '1' : '0'} label="Tenant" />
                   {/* <SpecItem
                     icon="document-text-outline"
                     value={currentInvoice ? formatMonthYear(currentInvoice.billing_month).split(' ')[0] : 'No'}
@@ -228,33 +230,33 @@ export default function RoomDetailScreen({
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>TENANT</Text>
 
-              {isVacant ? (
+              {!activeLease ? (
                 <View style={styles.card}>
                   <View style={styles.emptyStateIcon}>
                     <Ionicons name="person-add-outline" size={24} color={accentColor} />
                   </View>
                   <Text style={styles.emptyStateTitle}>
-                    {isMaintenance ? 'Room unavailable right now' : 'No tenant assigned'}
+                    {isMaintenance ? 'Room unavailable right now' : isReserved ? 'Room reserved' : 'No tenant assigned'}
                   </Text>
                   <Text style={styles.emptyStateText}>
                     {isMaintenance
                       ? 'Assigning a tenant will make sense after maintenance is complete.'
-                      : 'This room is open and ready for a new lease.'}
+                      : isReserved ? 'This room already has a lease reservation.'
+                        : isVacant ? 'This room is open and ready for a new lease.' : 'This room is not available for a new lease.'}
                   </Text>
                 </View>
               ) : (
                 <View style={styles.card}>
                   <Pressable
-                    onPress={() => onTenantPress(room.tenant!.id)}
+                    onPress={() => onTenantPress(activeLease.tenant.id)}
                     style={styles.tenantHeader}
                   >
-                    <Avatar name={room.tenant!.name} size={50} />
+                    <Avatar name={activeLease.tenant.name} size={50} />
 
                     <View style={styles.tenantMeta}>
-                      <Text style={styles.tenantName}>{room.tenant!.name}</Text>
-                      <Text style={styles.tenantLine}>{room.tenant!.phone}</Text>
+                      <Text style={styles.tenantName}>{tenant?.name}</Text>
                       <Text style={styles.tenantLine}>
-                        Tenant since {formatMonthYear(room.active_lease!.start_date)}
+                        Tenant since {formatMonthYear(activeLease.startDate)}
                       </Text>
                     </View>
                     <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
@@ -283,7 +285,8 @@ export default function RoomDetailScreen({
                 <Text style={styles.floorChip}>View All</Text>
               </View>
 
-              <View style={styles.card}>
+              {/* Todo: Payment Feature */}
+              {/* <View style={styles.card}>
                 {invoiceHistory.length === 0 ? (
                   <Text style={styles.emptyListText}>No invoices recorded for this room yet.</Text>
                 ) : (
@@ -332,12 +335,12 @@ export default function RoomDetailScreen({
                     );
                   })
                 )}
-              </View>
+              </View> */}
             </View>
           </View>
         </ScrollView>
 
-        {!isVacant ? (
+        {activeLease ? (
           <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 14) }]}>
             <View style={styles.footerActions}>
               <Pressable style={[styles.footerButton, { backgroundColor: accentColor }]}>

@@ -16,12 +16,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { toast } from '@/components/toast';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { Fonts } from '@/constants/theme';
-import type { RoomWithDetails, Tenant } from '@/features/home/home.types';
+import type { RoomCardDetails } from '@/features/room/room.types';
+import type { TenantListItem } from '@/features/tenant/tenant.types';
+import { useLeaseStore } from '../lease.store';
+import { getLeaseError } from '../lease.errors';
 import { AppDatePicker } from '@/features/settings/components/AppDatePicker';
 import { useDatePreferenceStore } from '@/features/settings/date-preference.store';
-import { canonicalDateFromDate, formatCanonicalDateForMode } from '@/features/settings/date.utils';
+import { formatCanonicalDateForMode } from '@/features/settings/date.utils';
 
-import { CreateLeaseFormData, CreateLeaseFormInput, CreateLeaseSchema } from '../lease.validation';
+import { CreateLeaseFormData, CreateLeaseFormInput, CreateLeaseSchema, leaseToday } from '../lease.validation';
 
 const floorLabel = (floorNumber: number) => {
   const lastTwoDigits = floorNumber % 100;
@@ -43,9 +46,9 @@ const floorLabel = (floorNumber: number) => {
 };
 
 interface CreateLeaseScreenProps {
-  rooms: RoomWithDetails[];
-  tenants: Tenant[];
-  initialRoomId?: number;
+  rooms: RoomCardDetails[];
+  tenants: TenantListItem[];
+  initialRoomId?: string;
   onBack: () => void;
   onCreated: () => void;
 }
@@ -58,14 +61,15 @@ export default function CreateLeaseScreen({
   onCreated,
 }: CreateLeaseScreenProps) {
   const defaultRoom = rooms.find((room) => room.id === initialRoomId) ?? rooms[0];
-  const today = canonicalDateFromDate(new Date());
+  const today = leaseToday();
+  const createLease = useLeaseStore((state) => state.createLease);
   const calendarMode = useDatePreferenceStore((state) => state.calendarMode);
 
   const {
     control,
     handleSubmit,
     watch,
-    reset,
+    setError,
     setValue,
     formState: { errors, isSubmitting },
   } = useForm<CreateLeaseFormInput, unknown, CreateLeaseFormData>({
@@ -74,7 +78,7 @@ export default function CreateLeaseScreen({
       roomId: defaultRoom?.id ?? '',
       tenantId: '',
       startDate: today,
-      monthlyRent: defaultRoom?.base_rent_amount ?? '',
+      monthlyRent: defaultRoom?.baseRentAmount ?? '',
     },
   });
 
@@ -82,7 +86,7 @@ export default function CreateLeaseScreen({
   const selectedTenantId = watch('tenantId');
   const selectedStartDate = watch('startDate');
 
-  const selectedRoom = rooms.find((room) => room.id === Number(selectedRoomId));
+  const selectedRoom = rooms.find((room) => room.id === selectedRoomId);
   const displayedStartDate = useMemo(
     () => formatCanonicalDateForMode(selectedStartDate, calendarMode),
     [calendarMode, selectedStartDate],
@@ -91,20 +95,38 @@ export default function CreateLeaseScreen({
   const onSubmit = async (data: CreateLeaseFormData) => {
     const chosenRoom = rooms.find((room) => room.id === data.roomId);
     const chosenTenant = tenants.find((tenant) => tenant.id === data.tenantId);
-    console.log('Data', data);
-    toast.success(
-      `${chosenTenant?.name ?? 'Tenant'} is ready for Room ${chosenRoom?.room_name ?? data.roomId}.`,
-      {
-        title: 'Lease created',
-      },
-    );
-    reset({
-      roomId: defaultRoom?.id ?? '',
-      tenantId: '',
-      startDate: today,
-      monthlyRent: defaultRoom?.base_rent_amount ?? '',
-    });
-    onCreated();
+    if (!chosenRoom || !chosenTenant) {
+      setError(!chosenRoom ? 'roomId' : 'tenantId', { message: 'Please select an available room and tenant.' });
+      return;
+    }
+    try {
+      const { lease, refreshFailed } = await createLease(data);
+      toast.success(
+        lease.isActive
+          ? `${chosenTenant.name} has been assigned to Room ${chosenRoom.roomName}.`
+          : `A future lease has been saved for ${chosenTenant.name} in Room ${chosenRoom.roomName}.`,
+        { title: 'Lease created' },
+      );
+      if (refreshFailed) {
+        toast.info('The lease was saved, but some lists could not refresh. Reopen the screen to reload.', {
+          title: 'Lease saved',
+        });
+      }
+      onCreated();
+    } catch (error) {
+      const failure = getLeaseError(error);
+      let hasFieldError = false;
+      for (const field of ['roomId', 'tenantId', 'startDate', 'monthlyRent'] as const) {
+        const message = failure.fieldErrors[field];
+        if (message) {
+          setError(field, { type: 'server', message });
+          hasFieldError = true;
+        }
+      }
+      toast.error(hasFieldError ? 'Please check the highlighted fields.' : failure.message, {
+        title: 'Lease not created',
+      });
+    }
   };
 
   return (
@@ -134,8 +156,8 @@ export default function CreateLeaseScreen({
             <View className="gap-1.5">
               <Text className="text-sm font-semibold text-slate-700">Available Room</Text>
               <View className="gap-3">
-                {rooms.map((room) => {
-                  const isSelected = Number(selectedRoomId) === room.id;
+                {rooms.filter(room => room.activeLease == null).map((room) => {
+                  const isSelected = selectedRoomId === room.id;
 
                   return (
                     <Controller
@@ -146,7 +168,7 @@ export default function CreateLeaseScreen({
                         <Pressable
                           onPress={() => {
                             onChange(room.id);
-                            setValue('monthlyRent', room.base_rent_amount, {
+                            setValue('monthlyRent', room.baseRentAmount, {
                               shouldDirty: true,
                               shouldValidate: true,
                             });
@@ -160,11 +182,11 @@ export default function CreateLeaseScreen({
                           <View className="flex-row items-center justify-between gap-3">
                             <View className="min-w-0 flex-1">
                               <Text className="text-base font-extrabold text-slate-900">
-                                Room {room.room_name}
+                                Room {room.roomName}
                               </Text>
                               <Text className="mt-1 text-xs leading-5 text-slate-500">
-                                {floorLabel(room.floor.floor_number)} • Base rent रु{' '}
-                                {room.base_rent_amount.toLocaleString('en-IN')}
+                                {floorLabel(Number(room.floorId))} • Base rent रु{' '}
+                                {room.baseRentAmount.toLocaleString('en-IN')}
                               </Text>
                             </View>
 
@@ -197,7 +219,7 @@ export default function CreateLeaseScreen({
               <Text className="text-sm font-semibold text-slate-700">Tenant</Text>
               <View className="gap-3">
                 {tenants.map((tenant) => {
-                  const isSelected = Number(selectedTenantId) === tenant.id;
+                  const isSelected = selectedTenantId === tenant.id;
 
                   return (
                     <Controller
@@ -282,11 +304,11 @@ export default function CreateLeaseScreen({
                   <TextInput
                     className="rounded-2xl border border-slate-200 bg-white px-4 py-4 text-base text-slate-900"
                     style={{ fontFamily: Fonts.sans }}
-                    placeholder={selectedRoom ? String(selectedRoom.base_rent_amount) : '18000'}
+                    placeholder={selectedRoom ? String(selectedRoom.baseRentAmount) : '18000'}
                     placeholderTextColor="#94A3B8"
-                    keyboardType="number-pad"
+                    keyboardType="decimal-pad"
                     onBlur={onBlur}
-                    onChangeText={(text) => onChange(text.replace(/[^0-9]/g, ''))}
+                    onChangeText={(text) => onChange(text.replace(/[^0-9.]/g, ''))}
                     value={value ? String(value) : ''}
                   />
                 )}
@@ -313,7 +335,7 @@ export default function CreateLeaseScreen({
                 opacity: isSubmitting ? 0.7 : 1,
               }}
             >
-              <Text className="text-base font-bold text-white">Save Lease</Text>
+              <Text className="text-base font-bold text-white">{isSubmitting ? 'Saving…' : 'Save Lease'}</Text>
             </Pressable>
           </View>
         </ScrollView>

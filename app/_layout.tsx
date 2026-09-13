@@ -2,9 +2,9 @@ import { useAuthStore } from '@/features/auth/auth.store';
 import '../global.css';
 
 import { ToastProvider } from '@/components/toast';
+import { LoadingState } from '@/components/ui/LoadingState';
 import { router, Stack, useSegments } from 'expo-router';
 import { useEffect } from 'react';
-import { ActivityIndicator, View } from 'react-native';
 
 export default function RootLayout() {
   // const { isAuthenticated, isLoading, checkAuth } = useAuthStore();
@@ -30,27 +30,23 @@ export default function RootLayout() {
   }, [isAuthenticated, isLoading, segments]);
 
   if (isLoading) {
-    return (
-      <View className="flex-1 justify-center items-center">
-        <ActivityIndicator size={'large'} />
-      </View>
-    );
+    return <LoadingState />;
   }
   return (
     <ToastProvider>
-      <Stack>
+      <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="lease/create" options={{ headerShown: false }} />
         <Stack.Screen name="room/add" options={{ headerShown: false }} />
-        <Stack.Screen name="room/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="room/[id]/index" options={{ headerShown: false }} />
         <Stack.Screen name="room/[id]/edit" options={{ headerShown: false }} />
         <Stack.Screen name="room/[id]/end-lease" options={{ headerShown: false }} />
         <Stack.Screen name="tenant/add" options={{ headerShown: false }} />
         <Stack.Screen name="tenant/index" options={{ headerShown: false }} />
-        <Stack.Screen name="tenant/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="tenant/[id]/index" options={{ headerShown: false }} />
         <Stack.Screen name="tenant/[id]/edit" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
+        <Stack.Screen name="modal" options={{ headerShown: true, presentation: 'modal', title: 'Modal' }} />
       </Stack>
     </ToastProvider>
   );

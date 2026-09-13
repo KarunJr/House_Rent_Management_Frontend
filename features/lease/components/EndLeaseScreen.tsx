@@ -6,36 +6,40 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { toast } from '@/components/toast';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
-import type { RoomWithDetails } from '@/features/home/home.types';
+import type { RoomCardDetails } from '@/features/room/room.types';
+import { useLeaseStore } from '../lease.store';
+import { getLeaseError } from '../lease.errors';
 import { AppDatePicker } from '@/features/settings/components/AppDatePicker';
 import { useDatePreferenceStore } from '@/features/settings/date-preference.store';
 import {
-  canonicalDateFromDate,
-  dateFromCanonical,
   formatCanonicalDateForMode,
 } from '@/features/settings/date.utils';
 
-import { EndLeaseFormData, EndLeaseFormInput, EndLeaseSchema } from '../lease.validation';
+import { EndLeaseFormData, EndLeaseFormInput, EndLeaseSchema, leaseToday } from '../lease.validation';
 
 const formatCurrency = (amount: number) => `रू ${amount.toLocaleString('en-IN')}`;
 
 interface EndLeaseScreenProps {
-  room: RoomWithDetails;
+  room: RoomCardDetails;
+  activeLease: NonNullable<RoomCardDetails['activeLease']>;
   onBack: () => void;
   onEnded: () => void;
 }
 
-export default function EndLeaseScreen({ room, onBack, onEnded }: EndLeaseScreenProps) {
+export default function EndLeaseScreen({ room, activeLease, onBack, onEnded }: EndLeaseScreenProps) {
   const calendarMode = useDatePreferenceStore((state) => state.calendarMode);
-  const activeLease = room.active_lease!;
-  const today = canonicalDateFromDate(new Date());
+  const endLease = useLeaseStore((state) => state.endLease);
+  const today = leaseToday();
+  const roomAfterMoveOut = room.status === 'Maintenance'
+    ? `Room ${room.roomName} will remain under maintenance.`
+    : `Room ${room.roomName} will be available for a new lease.`;
 
   const {
     control,
     handleSubmit,
     setError,
     watch,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<EndLeaseFormInput, unknown, EndLeaseFormData>({
     resolver: zodResolver(EndLeaseSchema),
     defaultValues: { endDate: today },
@@ -44,43 +48,42 @@ export default function EndLeaseScreen({ room, onBack, onEnded }: EndLeaseScreen
   const selectedEndDate = watch('endDate');
   const displayedEndDate = formatCanonicalDateForMode(selectedEndDate, calendarMode);
 
-  const onSubmit = (data: EndLeaseFormData) => {
-    const endDate = dateFromCanonical(data.endDate);
-    const startDate = dateFromCanonical(activeLease.start_date);
-    const currentDate = dateFromCanonical(today);
-
-    if (!endDate || !startDate || !currentDate) {
-      setError('endDate', { message: 'Choose a valid move-out date' });
-      return;
-    }
-
-    if (endDate < startDate) {
+  const onSubmit = async (data: EndLeaseFormData) => {
+    if (data.endDate < activeLease.startDate) {
       setError('endDate', { message: 'Move-out date cannot be before the lease start date' });
       return;
     }
 
-    if (endDate > currentDate) {
-      setError('endDate', { message: 'Choose today or a past date after the tenant has moved out' });
-      return;
-    }
+    const title = 'End this lease?';
+    const message = `${activeLease.tenant.name} will be moved out. ${roomAfterMoveOut}`;
+    const confirmed = Platform.OS === 'web'
+      ? window.confirm(`${title}\n\n${message}`)
+      : await new Promise<boolean>((resolve) => {
+        Alert.alert(title, message, [
+          { text: 'Cancel', style: 'cancel', onPress: () => resolve(false) },
+          { text: 'End Lease', style: 'destructive', onPress: () => resolve(true) },
+        ], { cancelable: false });
+      });
+    if (!confirmed) return;
 
-    Alert.alert(
-      'End this lease?',
-      `${room.tenant?.name ?? 'This tenant'} will be removed from Room ${room.room_name}, and the room will become available.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'End Lease',
-          style: 'destructive',
-          onPress: () => {
-            toast.success(`Room ${room.room_name} is ready for a new tenant.`, {
-              title: 'Lease ended',
-            });
-            onEnded();
-          },
-        },
-      ],
-    );
+    try {
+      // The route contains a room ID; this endpoint requires the active lease ID.
+      const { refreshFailed } = await endLease(activeLease.id, data);
+      toast.success(roomAfterMoveOut, { title: 'Lease ended' });
+      if (refreshFailed) {
+        toast.info('The lease ended, but some lists could not refresh. Reopen the screen to reload.', {
+          title: 'Lease ended',
+        });
+      }
+      onEnded();
+    } catch (error) {
+      const failure = getLeaseError(error);
+      const message = failure.fieldErrors.endDate;
+      if (message || failure.status === 400) {
+        setError('endDate', { type: 'server', message: message ?? failure.message });
+      }
+      toast.error(message ?? failure.message, { title: 'Lease not ended' });
+    }
   };
 
   return (
@@ -106,8 +109,8 @@ export default function EndLeaseScreen({ room, onBack, onEnded }: EndLeaseScreen
               <View className="flex-row items-start justify-between">
                 <View>
                   <Text className="text-xs font-bold uppercase tracking-[1.2px] text-slate-300">Active lease</Text>
-                  <Text className="mt-2 text-2xl font-extrabold text-white">Room {room.room_name}</Text>
-                  <Text className="mt-1 text-sm text-slate-300">{room.tenant?.name ?? 'Current tenant'}</Text>
+                  <Text className="mt-2 text-2xl font-extrabold text-white">Room {room.roomName}</Text>
+                  <Text className="mt-1 text-sm text-slate-300">{activeLease.tenant.name}</Text>
                 </View>
                 <View className="h-11 w-11 items-center justify-center rounded-2xl bg-white/10">
                   <Ionicons name="key-outline" size={21} color="#5EEAD4" />
@@ -118,12 +121,12 @@ export default function EndLeaseScreen({ room, onBack, onEnded }: EndLeaseScreen
                 <View className="flex-1">
                   <Text className="text-xs font-semibold text-slate-400">Started</Text>
                   <Text className="mt-1 text-sm font-bold text-white">
-                    {formatCanonicalDateForMode(activeLease.start_date, calendarMode)}
+                    {formatCanonicalDateForMode(activeLease.startDate, calendarMode)}
                   </Text>
                 </View>
                 <View className="flex-1">
                   <Text className="text-xs font-semibold text-slate-400">Monthly rent</Text>
-                  <Text className="mt-1 text-sm font-bold text-white">{formatCurrency(activeLease.monthly_rent)}</Text>
+                  <Text className="mt-1 text-sm font-bold text-white">{formatCurrency(activeLease.monthlyRent)}</Text>
                 </View>
               </View>
             </View>
@@ -150,7 +153,7 @@ export default function EndLeaseScreen({ room, onBack, onEnded }: EndLeaseScreen
                 <View className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
                   <Text className="text-sm font-semibold text-slate-800">Move-out: {displayedEndDate}</Text>
                   <Text className="mt-1 text-xs leading-5 text-slate-500">
-                    Once confirmed, Room {room.room_name} will be available for a new lease.
+                    {roomAfterMoveOut}
                   </Text>
                 </View>
               ) : null}
@@ -159,7 +162,7 @@ export default function EndLeaseScreen({ room, onBack, onEnded }: EndLeaseScreen
             <View className="flex-row gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3.5">
               <Ionicons name="information-circle-outline" size={20} color="#B45309" />
               <Text className="flex-1 text-xs leading-5 text-amber-900">
-                Existing payments and invoice history will remain unchanged. Only future billing stops.
+                The lease will be marked inactive. Its history will remain available after move-out.
               </Text>
             </View>
           </View>
@@ -173,10 +176,12 @@ export default function EndLeaseScreen({ room, onBack, onEnded }: EndLeaseScreen
             </Pressable>
             <Pressable
               onPress={handleSubmit(onSubmit)}
+              disabled={isSubmitting}
+              style={{ opacity: isSubmitting ? 0.7 : 1 }}
               className="flex-1 flex-row items-center justify-center gap-2 rounded-2xl bg-[#DC2626] px-4 py-4"
             >
               <Ionicons name="log-out-outline" size={18} color="#FFFFFF" />
-              <Text className="text-base font-bold text-white">End Lease</Text>
+              <Text className="text-base font-bold text-white">{isSubmitting ? 'Ending…' : 'End Lease'}</Text>
             </Pressable>
           </View>
         </ScrollView>

@@ -9,12 +9,14 @@ export const RoomSchema = z.object({
     .regex(/^[A-Za-z0-9-]+$/, {
       error: 'Use only letters, numbers, or hyphen',
     }),
-  floorId: z.coerce.number().int().positive({ error: 'Select a floor' }),
+  floorId: z.string({ error: 'Select a floor' }).trim().regex(/^0*[1-9][0-9]*$/, {
+    error: 'Enter a floor number greater than 0',
+  }),
   baseRentAmount: z.coerce
     .number()
     .positive({ error: 'Base rent must be greater than 0' })
     .max(9999999, { error: 'Base rent is too large' }),
-  status: z.enum(['AVAILABLE', 'MAINTENANCE', 'OCCUPIED']),
+  status: z.enum(['Available', 'Maintenance', 'Occupied']),
 });
 
 export type RoomFormInput = z.input<typeof RoomSchema>;

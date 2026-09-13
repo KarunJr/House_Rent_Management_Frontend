@@ -4,33 +4,27 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { Avatar } from '@/features/home/components/ui/Avatar';
-import type { Lease, Room, Tenant } from '@/features/home/home.types';
+import type { TenantProfile } from '../tenant.types';
 import { useDatePreferenceStore } from '@/features/settings/date-preference.store';
 import { formatCanonicalDateForMode } from '@/features/settings/date.utils';
 
 interface TenantDetailScreenProps {
-  tenant: Tenant;
-  leases: Lease[];
-  rooms: Room[];
+  tenant: TenantProfile;
   onBack: () => void;
   onEdit: () => void;
-  onRoomPress: (roomId: number) => void;
+  onRoomPress: (roomId: string) => void;
 }
 
 export default function TenantDetailScreen({
   tenant,
-  leases,
-  rooms,
   onBack,
   onEdit,
   onRoomPress,
 }: TenantDetailScreenProps) {
   const calendarMode = useDatePreferenceStore((state) => state.calendarMode);
-  const orderedLeases = [...leases].sort(
-    (a, b) => new Date(b.start_date).getTime() - new Date(a.start_date).getTime(),
-  );
-  const activeLease = orderedLeases.find((lease) => lease.is_active) ?? null;
-  const activeRoom = activeLease ? rooms.find((room) => room.id === activeLease.room_id) ?? null : null;
+  // The profile endpoint returns leases ordered by start date, with their rooms included.
+  const orderedLeases = tenant.leases;
+  const activeLeases = orderedLeases.filter((lease) => lease.isActive);
 
   return (
     <SafeAreaView className="flex-1 bg-[#F3F4F6]" edges={['top', 'bottom']}>
@@ -55,7 +49,9 @@ export default function TenantDetailScreen({
           <Text className="mt-1 text-sm text-slate-300">Tenant profile</Text>
           <View className="mt-5 rounded-full bg-white/10 px-3 py-1.5">
             <Text className="text-xs font-bold text-[#5EEAD4]">
-              {activeRoom ? `Currently in Room ${activeRoom.room_name}` : 'No active lease'}
+              {activeLeases.length > 0
+                ? `Currently in ${activeLeases.length === 1 ? 'Room' : 'Rooms'} ${activeLeases.map((lease) => lease.room.roomName).join(', ')}`
+                : 'No active lease'}
             </Text>
           </View>
         </View>
@@ -95,26 +91,27 @@ export default function TenantDetailScreen({
           ) : (
             <View className="gap-3">
               {orderedLeases.map((lease) => {
-                const room = rooms.find((item) => item.id === lease.room_id) ?? null;
-                const isActive = lease.is_active;
+                const room = lease.room;
+                const isActive = lease.isActive;
+                const leaseStatus = isActive ? 'Active' : lease.endDate ? 'Ended'
+                  : lease.startDate > new Date().toISOString().slice(0, 10) ? 'Scheduled' : 'Inactive';
 
                 return (
                   <Pressable
                     key={lease.id}
-                    disabled={!room}
-                    onPress={() => room && onRoomPress(room.id)}
+                    onPress={() => onRoomPress(room.id)}
                     className="rounded-2xl border border-slate-200 bg-white px-4 py-4"
                   >
                     <View className="flex-row items-center justify-between gap-3">
                       <View className="min-w-0 flex-1">
-                        <Text className="text-base font-extrabold text-slate-900">Room {room?.room_name ?? '-'}</Text>
+                        <Text className="text-base font-extrabold text-slate-900">Room {room.roomName}</Text>
                         <Text className="mt-1 text-xs leading-5 text-slate-500">
-                          Started {formatCanonicalDateForMode(lease.start_date, calendarMode)}
+                          Started {formatCanonicalDateForMode(lease.startDate, calendarMode)}
                         </Text>
                       </View>
                       <View className={`rounded-full px-3 py-1 ${isActive ? 'bg-teal-50' : 'bg-slate-100'}`}>
                         <Text className={`text-[11px] font-bold ${isActive ? 'text-teal-700' : 'text-slate-600'}`}>
-                          {isActive ? 'Active' : 'Ended'}
+                          {leaseStatus}
                         </Text>
                       </View>
                     </View>

@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { isAxiosError } from 'axios';
 import { Controller, useForm } from 'react-hook-form';
 import {
   KeyboardAvoidingView,
@@ -15,22 +16,32 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { toast } from '@/components/toast';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { Fonts } from '@/constants/theme';
-import type { Tenant } from '@/features/home/home.types';
+import { handleError } from '@/helpers/axios.error';
+import type { TenantDetails } from '../tenant.types';
+import { useTenantStore } from '../tenant.store';
 
 import { AddTenantFormData, AddTenantFormInput, AddTenantSchema } from '../tenant.validation';
 
 interface AddTenantScreenProps {
   onBack: () => void;
   onSaved: () => void;
-  tenant?: Tenant;
+  tenant?: TenantDetails;
   onViewTenants?: () => void;
 }
 
-export default function AddTenantScreen({ onBack, onSaved, tenant, onViewTenants }: AddTenantScreenProps) {
+export default function AddTenantScreen({
+  onBack,
+  onSaved,
+  tenant,
+  onViewTenants,
+}: AddTenantScreenProps) {
   const isEditing = Boolean(tenant);
+  const addTenant = useTenantStore((state) => state.addTenant);
+  const editTenant = useTenantStore((state) => state.editTenant);
   const {
     control,
     handleSubmit,
+    setError,
     formState: { errors, isSubmitting },
   } = useForm<AddTenantFormInput, unknown, AddTenantFormData>({
     resolver: zodResolver(AddTenantSchema),
@@ -42,10 +53,35 @@ export default function AddTenantScreen({ onBack, onSaved, tenant, onViewTenants
   });
 
   const onSubmit = async (data: AddTenantFormData) => {
-    toast.success(`${data.name} is ready to save.`, {
-      title: isEditing ? 'Tenant updated' : 'Tenant created',
-    });
-    onSaved();
+    try {
+      const savedTenant = tenant ? await editTenant(tenant.id, data) : await addTenant(data);
+      toast.success(`${savedTenant.name} has been ${isEditing ? 'updated' : 'created'}.`, {
+        title: isEditing ? 'Tenant updated' : 'Tenant created',
+      });
+      onSaved();
+    } catch (error) {
+      const fieldErrors = isAxiosError(error) ? error.response?.data?.errors : undefined;
+      let hasFieldError = false;
+      if (fieldErrors && typeof fieldErrors === 'object' && !Array.isArray(fieldErrors)) {
+        for (const [key, messages] of Object.entries(fieldErrors)) {
+          const field = key.split('.').pop()?.toLowerCase();
+          if (
+            (field === 'name' || field === 'phone' || field === 'email') &&
+            Array.isArray(messages) &&
+            typeof messages[0] === 'string'
+          ) {
+            setError(field, { type: 'server', message: messages[0] });
+            hasFieldError = true;
+          }
+        }
+      }
+      toast.error(
+        hasFieldError ? 'Please check the highlighted fields.' : handleError(error).message,
+        {
+          title: 'Tenant not saved',
+        },
+      );
+    }
   };
 
   return (
@@ -127,9 +163,7 @@ export default function AddTenantScreen({ onBack, onSaved, tenant, onViewTenants
                   />
                 )}
               />
-              {errors.phone && (
-                <Text className="text-xs text-red-500">{errors.phone.message}</Text>
-              )}
+              {errors.phone && <Text className="text-xs text-red-500">{errors.phone.message}</Text>}
             </View>
 
             <View className="gap-1.5">
@@ -152,9 +186,7 @@ export default function AddTenantScreen({ onBack, onSaved, tenant, onViewTenants
                   />
                 )}
               />
-              {errors.email && (
-                <Text className="text-xs text-red-500">{errors.email.message}</Text>
-              )}
+              {errors.email && <Text className="text-xs text-red-500">{errors.email.message}</Text>}
             </View>
           </View>
 
@@ -175,7 +207,7 @@ export default function AddTenantScreen({ onBack, onSaved, tenant, onViewTenants
               }}
             >
               <Text className="text-base font-bold text-white">
-                {isEditing ? 'Save Changes' : 'Save Tenant'}
+                {isSubmitting ? 'Saving…' : isEditing ? 'Save Changes' : 'Save Tenant'}
               </Text>
             </Pressable>
           </View>
