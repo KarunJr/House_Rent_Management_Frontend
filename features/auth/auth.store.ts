@@ -1,4 +1,4 @@
-import { loginApi, registerApi, resendOtpApi, verifyEmailApi } from '@/features/auth/auth.api';
+import { checkAuthApi, loginApi, registerApi, resendOtpApi, verifyEmailApi } from '@/features/auth/auth.api';
 import {
   LoginResponse,
   ResendOtpData,
@@ -10,28 +10,52 @@ import {
 } from '@/features/auth/auth.types';
 import { LoginFormData, RegisterFormData } from '@/features/auth/auth.validation';
 import * as SecureStore from 'expo-secure-store';
+import { isAxiosError } from 'axios';
 import { create } from 'zustand';
+import { setSessionExpiredHandler } from '@/lib/client';
 interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
-  user?: UserResponseDto;
+  authError: string | null;
+  user: UserResponseDto | null;
 
   checkAuth: () => Promise<void>;
   login: (data: LoginFormData) => Promise<LoginResponse>;
   register: (data: RegisterFormData) => Promise<UserRegistrationResponse>;
   verifyEmail: (data: VerifyEmailData) => Promise<VerifyEmailResponse>;
   resendOtp: (data: ResendOtpData) => Promise<ResendOtpResponse>;
+  logout: () => Promise<void>;
 }
 export const useAuthStore = create<AuthState>()((set) => ({
   isAuthenticated: false,
   isLoading: true,
+  authError: null,
+  user: null,
 
   checkAuth: async () => {
+    set({ isLoading: true, authError: null });
     try {
       const token = await SecureStore.getItemAsync('accessToken');
-      set({ isAuthenticated: !!token, isLoading: false });
+      if (!token) {
+        set({ isAuthenticated: false, user: null });
+        return;
+      }
+
+      try {
+        const response = await checkAuthApi();
+        set({ isAuthenticated: true, user: response.data });
+      } catch (error) {
+        if (isAxiosError(error) && error.response?.status === 401) {
+          await SecureStore.deleteItemAsync('accessToken');
+          set({ isAuthenticated: false, user: null });
+        } else {
+          throw error;
+        }
+      }
     } catch {
-      set({ isAuthenticated: false, isLoading: false });
+      set({ authError: 'Unable to check your session. Please try again.' });
+    } finally {
+      set({ isLoading: false });
     }
   },
 
@@ -80,4 +104,18 @@ export const useAuthStore = create<AuthState>()((set) => ({
       throw error;
     }
   },
+
+  logout: async () => {
+    try {
+      await SecureStore.deleteItemAsync('accessToken');
+      set({ user: null, isAuthenticated: false, authError: null });
+    } catch (error) {
+      throw error;
+    }
+  },
 }));
+
+// Keep store updates here to avoid a client → store → API → client import cycle.
+setSessionExpiredHandler((authError) => {
+  useAuthStore.setState({ user: null, isAuthenticated: false, authError: authError });
+});

@@ -1,6 +1,10 @@
-import { ResendOtpData, VerifyEmailData } from '@/features/auth/auth.types';
+import { ResendOtpData, UserResponseDto, VerifyEmailData } from '@/features/auth/auth.types';
 import { LoginFormData, RegisterFormData } from '@/features/auth/auth.validation';
 import api from '../../lib/client';
+
+export const checkAuthApi = () => {
+  return api.get<UserResponseDto>('/v1/api/auth/me');
+};
 
 export const registerApi = <T>(data: RegisterFormData) => {
   return api.post<T>('/v1/api/auth/register', data);
