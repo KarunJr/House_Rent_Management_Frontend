@@ -1,84 +1,92 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, Text, View } from 'react-native';
+import { router } from 'expo-router';
+import { useState } from 'react';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { toast } from '@/components/toast';
+import { ScreenHeader } from '@/components/ui/ScreenHeader';
+import { useAuthStore } from '@/features/auth/auth.store';
 import { useDatePreferenceStore, type CalendarMode } from '@/features/settings/date-preference.store';
 
-const calendarOptions: { mode: CalendarMode; title: string; example: string; description: string }[] = [
-  {
-    mode: 'AD',
-    title: 'English date (AD)',
-    example: '2026 January 15',
-    description: 'Use the Gregorian calendar throughout the app.',
-  },
-  {
-    mode: 'BS',
-    title: 'Nepali date (BS)',
-    example: '2082 Magh 01',
-    description: 'Use the Bikram Sambat calendar throughout the app.',
-  },
-];
+const calendarOptions: CalendarMode[] = ['AD', 'BS'];
 
 export default function SettingsScreen() {
   const calendarMode = useDatePreferenceStore((state) => state.calendarMode);
   const setCalendarMode = useDatePreferenceStore((state) => state.setCalendarMode);
+  const logout = useAuthStore((state) => state.logout);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const handleLogout = async () => {
+    if (isLoggingOut) return;
+
+    setIsLoggingOut(true);
+    try {
+      await logout();
+    } catch {
+      toast.error('Unable to log out. Please try again.');
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-[#F3F4F6]" edges={['top']}>
-      <View className="px-5 pt-5">
-        <View className="h-12 w-12 items-center justify-center rounded-2xl bg-[#DDF7F3]">
-          <Ionicons name="settings-outline" size={23} color="#0F766E" />
-        </View>
-        <Text className="mt-5 text-3xl font-extrabold tracking-tight text-slate-900">Settings</Text>
-        <Text className="mt-2 text-sm leading-6 text-slate-500">
-          Set the calendar every date in your rental account should use.
-        </Text>
-      </View>
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 20, paddingTop: 12, paddingBottom: 28 }}
+        showsVerticalScrollIndicator={false}
+      >
+        <ScreenHeader title="Settings" onBack={() => router.navigate('/(tabs)/home')} />
 
-      <View className="mt-8 px-5">
-        <Text className="text-sm font-bold text-slate-800">Date calendar</Text>
-        <Text className="mt-1 text-xs leading-5 text-slate-500">
-          You can change this anytime. Existing records remain the same day.
-        </Text>
+        <View className="gap-3">
+          <View className="flex-row flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-2xl border border-slate-200 bg-white px-4 py-3">
+            <View>
+              <Text className="text-sm font-bold text-slate-900">Date format</Text>
+              <Text className="mt-1 text-xs text-slate-500">Dates across the app</Text>
+            </View>
 
-        <View className="mt-4 gap-3">
-          {calendarOptions.map((option) => {
-            const selected = calendarMode === option.mode;
+            <View accessibilityRole="radiogroup" accessibilityLabel="Date format" className="flex-row gap-1">
+              {calendarOptions.map((mode) => {
+                const selected = calendarMode === mode;
 
-            return (
-              <Pressable
-                key={option.mode}
-                onPress={() => setCalendarMode(option.mode)}
-                className="rounded-2xl border bg-white px-4 py-4"
-                style={{
-                  borderColor: selected ? '#14B8A6' : '#E2E8F0',
-                  backgroundColor: selected ? '#F0FDFA' : '#FFFFFF',
-                }}
-              >
-                <View className="flex-row items-center gap-3">
-                  <View
-                    className="h-10 w-10 items-center justify-center rounded-xl"
-                    style={{ backgroundColor: selected ? '#CCFBF1' : '#F1F5F9' }}
+                return (
+                  <Pressable
+                    key={mode}
+                    accessibilityRole="radio"
+                    accessibilityLabel={mode}
+                    accessibilityState={{ checked: selected }}
+                    onPress={() => setCalendarMode(mode)}
+                    className="min-h-11 flex-row items-center gap-2 rounded-xl px-2 active:bg-slate-100"
                   >
-                    <Ionicons name="calendar-outline" size={19} color={selected ? '#0F766E' : '#64748B'} />
-                  </View>
-                  <View className="min-w-0 flex-1">
-                    <Text className="text-base font-bold text-slate-900">{option.title}</Text>
-                    <Text className="mt-1 text-sm font-semibold text-teal-700">{option.example}</Text>
-                    <Text className="mt-1 text-xs leading-5 text-slate-500">{option.description}</Text>
-                  </View>
-                  <View
-                    className="h-6 w-6 items-center justify-center rounded-full border-2"
-                    style={{ borderColor: selected ? '#14B8A6' : '#CBD5E1' }}
-                  >
-                    {selected && <View className="h-3 w-3 rounded-full bg-[#14B8A6]" />}
-                  </View>
-                </View>
-              </Pressable>
-            );
-          })}
+                    <View
+                      className="h-5 w-5 items-center justify-center rounded-full border-2"
+                      style={{ borderColor: selected ? '#14B8A6' : '#CBD5E1' }}
+                    >
+                      {selected && <View className="h-2.5 w-2.5 rounded-full bg-[#14B8A6]" />}
+                    </View>
+                    <Text className="text-sm font-semibold text-slate-800">{mode}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
         </View>
-      </View>
+
+        <View className="mt-auto pt-8">
+          <Pressable
+            accessibilityRole="button"
+            accessibilityState={{ disabled: isLoggingOut, busy: isLoggingOut }}
+            disabled={isLoggingOut}
+            onPress={handleLogout}
+            className="min-h-12 flex-row items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 active:bg-red-50"
+            style={{ opacity: isLoggingOut ? 0.5 : 1 }}
+          >
+            <Ionicons name="log-out-outline" size={20} color="#DC2626" />
+            <Text className="text-sm font-bold text-red-600">{isLoggingOut ? 'Logging out…' : 'Logout'}</Text>
+          </Pressable>
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
