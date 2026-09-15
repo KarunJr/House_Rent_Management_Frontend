@@ -10,3 +10,12 @@ export function formatShortDate(iso: string): string {
   const date = new Date(iso);
   return date.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
 }
+
+export function formatFloor(floor: string): string {
+  const number = Number(floor);
+  const lastTwo = number % 100;
+  const suffix = lastTwo >= 11 && lastTwo <= 13
+    ? 'th'
+    : ({ 1: 'st', 2: 'nd', 3: 'rd' } as Record<number, string>)[number % 10] ?? 'th';
+  return `${number}${suffix} Floor`;
+}

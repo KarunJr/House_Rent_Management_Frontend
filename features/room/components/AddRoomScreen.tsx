@@ -1,3 +1,5 @@
+import { useRef } from 'react';
+import { isAxiosError } from 'axios';
 import { Ionicons } from '@expo/vector-icons';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Controller, useForm } from 'react-hook-form';
@@ -39,28 +41,6 @@ const STATUS_OPTIONS: {
   },
 ];
 
-const floorLabel = (floorNumber: number) => {
-  const lastTwoDigits = floorNumber % 100;
-
-  if (lastTwoDigits >= 11 && lastTwoDigits <= 13) {
-    return `${floorNumber}th Floor`;
-  }
-
-  switch (floorNumber % 10) {
-    case 1:
-      return `${floorNumber}st Floor`;
-    case 2:
-      return `${floorNumber}nd Floor`;
-    case 3:
-      return `${floorNumber}rd Floor`;
-    default:
-      return `${floorNumber}th Floor`;
-  }
-};
-const floors = [
-  { id: '1', floor_number: 1 },
-  { id: '2', floor_number: 2 },
-];
 interface AddRoomScreenProps {
   onBack: () => void;
   onSaved: () => void;
@@ -72,7 +52,7 @@ export default function AddRoomScreen({ onBack, onSaved, room }: AddRoomScreenPr
   const isOccupied = room?.status === 'Occupied' || Boolean(room?.activeLease);
   const formDefaults: AddRoomFormInput = {
     roomName: room?.roomName ?? '',
-    floorId: room?.floorId ?? floors[0]?.id ?? '',
+    floorId: room?.floorId ?? '',
     baseRentAmount: room?.baseRentAmount ?? '',
     status: room?.status ?? 'Available',
   };
@@ -81,6 +61,7 @@ export default function AddRoomScreen({ onBack, onSaved, room }: AddRoomScreenPr
   const {
     control,
     handleSubmit,
+    setError,
     watch,
     formState: { errors, isSubmitting },
   } = useForm<AddRoomFormInput, unknown, AddRoomFormData>({
@@ -91,9 +72,11 @@ export default function AddRoomScreen({ onBack, onSaved, room }: AddRoomScreenPr
   });
 
   const selectedStatus = watch('status');
-  const selectedFloorId = watch('floorId');
 
+  const saveInProgress = useRef(false);
   const onSubmit = async (data: AddRoomFormData) => {
+    if (saveInProgress.current) return;
+    saveInProgress.current = true;
     try {
       const response = room ? await editRoom(room.id, data) : await addRoom(data);
       if (!response.success || !response.roomDetails) {
@@ -108,10 +91,30 @@ export default function AddRoomScreen({ onBack, onSaved, room }: AddRoomScreenPr
       });
       onSaved();
     } catch (error) {
+      const fieldErrors = isAxiosError(error) ? error.response?.data?.errors : undefined;
+      const fields = {
+        roomname: 'roomName',
+        floorid: 'floorId',
+        baserentamount: 'baseRentAmount',
+        status: 'status',
+      } as const;
+      let hasFieldError = false;
+      if (fieldErrors && typeof fieldErrors === 'object' && !Array.isArray(fieldErrors)) {
+        for (const [key, messages] of Object.entries(fieldErrors)) {
+          const name = key.split('.').pop()?.toLowerCase();
+          const field = name && Object.hasOwn(fields, name) ? fields[name as keyof typeof fields] : undefined;
+          if (field && Array.isArray(messages) && typeof messages[0] === 'string') {
+            setError(field, { type: 'server', message: messages[0] });
+            hasFieldError = true;
+          }
+        }
+      }
       const apiError = handleError(error);
-      toast.error(apiError.message, {
-        title: 'Please try again',
+      toast.error(hasFieldError ? 'Please check the highlighted fields.' : apiError.message, {
+        title: 'Room not saved',
       });
+    } finally {
+      saveInProgress.current = false;
     }
   };
 
@@ -136,7 +139,7 @@ export default function AddRoomScreen({ onBack, onSaved, room }: AddRoomScreenPr
             <Text className="mt-2 text-sm leading-6 text-slate-500">
               {isEditing
                 ? 'Keep the room details accurate without affecting its rental history.'
-                : 'Add the room number, pick its floor, and define the starting rent.'}
+                : 'Add the room number, enter its floor, and define the starting rent.'}
             </Text>
           </View>
 
@@ -167,58 +170,22 @@ export default function AddRoomScreen({ onBack, onSaved, room }: AddRoomScreenPr
 
             <View className="gap-1.5">
               <Text className="text-sm font-semibold text-slate-700">Floor</Text>
-              {isEditing ? (
-                <Controller
-                  control={control}
-                  name="floorId"
-                  render={({ field: { onBlur, onChange, value } }) => (
-                    <TextInput
-                      className="rounded-2xl border border-slate-200 bg-white px-4 py-4 text-base text-slate-900"
-                      style={{ fontFamily: Fonts.sans }}
-                      placeholder="Example: 3"
-                      placeholderTextColor="#94A3B8"
-                      keyboardType="number-pad"
-                      onBlur={onBlur}
-                      onChangeText={onChange}
-                      value={value}
-                    />
-                  )}
-                />
-              ) : (
-                <View className="flex-row flex-wrap gap-3">
-                  {floors.map((floor) => {
-                    const isSelected = selectedFloorId === floor.id;
-
-                    return (
-                      <Controller
-                        key={floor.id}
-                        control={control}
-                        name="floorId"
-                        render={({ field: { onChange } }) => (
-                          <Pressable
-                            onPress={() => onChange(floor.id)}
-                            className="min-w-[108px] rounded-2xl border px-4 py-3"
-                            style={{
-                              backgroundColor: isSelected ? '#E8F2FF' : '#FFFFFF',
-                              borderColor: isSelected ? '#2563EB' : '#E2E8F0',
-                            }}
-                          >
-                            <Text
-                              className="text-sm font-bold"
-                              style={{ color: isSelected ? '#1D4ED8' : '#0F172A' }}
-                            >
-                              {floorLabel(floor.floor_number)}
-                            </Text>
-                            <Text className="mt-1 text-xs text-slate-500">
-                              Floor {floor.floor_number}
-                            </Text>
-                          </Pressable>
-                      )}
-                    />
-                  );
-                })}
-              </View>
-              )}
+              <Controller
+                control={control}
+                name="floorId"
+                render={({ field: { onBlur, onChange, value } }) => (
+                  <TextInput
+                    className="rounded-2xl border border-slate-200 bg-white px-4 py-4 text-base text-slate-900"
+                    style={{ fontFamily: Fonts.sans }}
+                    placeholder="Example: 3"
+                    placeholderTextColor="#94A3B8"
+                    keyboardType="number-pad"
+                    onBlur={onBlur}
+                    onChangeText={onChange}
+                    value={value}
+                  />
+                )}
+              />
               {errors.floorId && (
                 <Text className="text-xs text-red-500">{errors.floorId.message}</Text>
               )}

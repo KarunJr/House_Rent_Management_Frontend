@@ -1,3 +1,4 @@
+import { openContact } from '../contact';
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -59,7 +60,7 @@ export default function TenantDetailScreen({
         <View className="mt-6">
           <Text className="mb-3 text-sm font-bold uppercase tracking-[1px] text-slate-500">Contact</Text>
           <View className="rounded-2xl border border-slate-200 bg-white">
-            <View className="flex-row items-center gap-3 px-4 py-4">
+            <Pressable accessibilityRole="button" accessibilityLabel="Call tenant" onPress={() => openContact('tel', tenant.phone)} className="flex-row items-center gap-3 px-4 py-4">
               <View className="h-10 w-10 items-center justify-center rounded-xl bg-teal-50">
                 <Ionicons name="call-outline" size={18} color="#0F766E" />
               </View>
@@ -67,9 +68,9 @@ export default function TenantDetailScreen({
                 <Text className="text-xs font-semibold text-slate-400">Phone number</Text>
                 <Text className="mt-1 text-sm font-bold text-slate-800">{tenant.phone}</Text>
               </View>
-            </View>
+            </Pressable>
             <View className="mx-4 h-px bg-slate-100" />
-            <View className="flex-row items-center gap-3 px-4 py-4">
+            <Pressable accessibilityRole="button" accessibilityLabel="Email tenant" disabled={!tenant.email} onPress={() => openContact('mailto', tenant.email)} className="flex-row items-center gap-3 px-4 py-4">
               <View className="h-10 w-10 items-center justify-center rounded-xl bg-blue-50">
                 <Ionicons name="mail-outline" size={18} color="#2563EB" />
               </View>
@@ -77,7 +78,7 @@ export default function TenantDetailScreen({
                 <Text className="text-xs font-semibold text-slate-400">Email address</Text>
                 <Text className="mt-1 text-sm font-bold text-slate-800">{tenant.email ?? 'Not provided'}</Text>
               </View>
-            </View>
+            </Pressable>
           </View>
         </View>
 

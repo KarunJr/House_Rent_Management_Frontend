@@ -1,51 +1,24 @@
+import { useRef, useState } from 'react';
+import { contactTenant } from '@/features/tenant/contact';
+import { useDatePreferenceStore } from '@/features/settings/date-preference.store';
+import { formatCanonicalDateForMode } from '@/features/settings/date.utils';
+import { formatFloor } from '../utils/format';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { ImageBackground, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
-// import type { BillInvoice, Payment, RoomWithDetails } from '../home.types';
 import { Avatar } from './ui/Avatar';
-// import Badge from './ui/StatusBadge';
 import { RoomCardDetails } from '@/features/room/room.types';
 
 interface RoomDetailScreenProps {
   room: RoomCardDetails;
-  // invoiceHistory: BillInvoice[];
-  // payments: Payment[];
   onBack: () => void;
   onEdit: () => void;
   onEndLease: () => void;
   onTenantPress: (tenantId: string) => void;
 }
 
-const ROOM_IMAGES: Record<number, string> = {
-  1: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=1200&h=900&fit=crop&auto=format',
-  2: 'https://images.unsplash.com/photo-1560185007-c5ca9d2c014d?w=1200&h=900&fit=crop&auto=format',
-  3: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=1200&h=900&fit=crop&auto=format',
-};
-
-const floorLabel = (floorNumber: string) => {
-  if (floorNumber === '1') return '1st Floor';
-  if (floorNumber === '2') return '2nd Floor';
-  if (floorNumber === '3') return '3rd Floor';
-
-  return `${floorNumber}th Floor`;
-};
-
 const formatCurrency = (amount: number) => `रू ${amount.toLocaleString('en-IN')}`;
-
-// const formatShortDate = (date: string) =>
-//   new Date(date).toLocaleDateString('en-US', {
-//     day: 'numeric',
-//     month: 'short',
-//     year: 'numeric',
-//   });
-
-const formatMonthYear = (date: string) =>
-  new Date(date).toLocaleDateString('en-US', {
-    month: 'long',
-    year: 'numeric',
-  });
 
 const getAccentColor = (status: RoomCardDetails['status']) => {
   switch (status) {
@@ -59,58 +32,6 @@ const getAccentColor = (status: RoomCardDetails['status']) => {
       return '#64748B';
   }
 };
-
-// const getBadgeStatus = (room: RoomWithDetails) => {
-//   if (room.status === 'MAINTENANCE') return 'maintenance' as const;
-//   if (room.status === 'AVAILABLE' || room.active_lease === null) return 'vacant' as const;
-//   if (room.current_invoice?.status === 'PAID') return 'paid' as const;
-//   if (room.current_invoice?.status === 'PARTIAL') return 'partial' as const;
-//   if (room.current_invoice?.status === 'OVERDUE') return 'overdue' as const;
-//   if (room.current_invoice?.status === 'CANCELLED') return 'cancelled' as const;
-//   return 'pending' as const;
-// };
-/*
-
-const paymentTone = (status: BillInvoice['status']) => {
-  switch (status) {
-    case 'PAID':
-      return {
-        iconBg: '#E8FBF5',
-        iconColor: '#10B981',
-        amountColor: '#10B981',
-        badge: 'paid' as const,
-      };
-    case 'OVERDUE':
-      return {
-        iconBg: '#FEF2F2',
-        iconColor: '#EF4444',
-        amountColor: '#DC2626',
-        badge: 'overdue' as const,
-      };
-    case 'PARTIAL':
-      return {
-        iconBg: '#EFF6FF',
-        iconColor: '#3B82F6',
-        amountColor: '#2563EB',
-        badge: 'partial' as const,
-      };
-    case 'CANCELLED':
-      return {
-        iconBg: '#F3F4F6',
-        iconColor: '#6B7280',
-        amountColor: '#4B5563',
-        badge: 'cancelled' as const,
-      };
-    default:
-      return {
-        iconBg: '#FFFBEB',
-        iconColor: '#D97706',
-        amountColor: '#B45309',
-        badge: 'pending' as const,
-      };
-  }
-};
-*/
 
 const SpecItem = ({
   icon,
@@ -130,21 +51,32 @@ const SpecItem = ({
 
 export default function RoomDetailScreen({
   room,
-  // invoiceHistory,
-  // payments,
   onBack,
   onEdit,
   onEndLease,
   onTenantPress,
 }: RoomDetailScreenProps) {
   const insets = useSafeAreaInsets();
+  const calendarMode = useDatePreferenceStore((state) => state.calendarMode);
+  const [isContacting, setIsContacting] = useState(false);
+  const contactInProgress = useRef(false);
+  const handleContact = async (action: 'tel' | 'sms') => {
+    if (!room.activeLease || contactInProgress.current) return;
+    contactInProgress.current = true;
+    setIsContacting(true);
+    try {
+      await contactTenant(room.activeLease.tenant.id, action);
+    } finally {
+      contactInProgress.current = false;
+      setIsContacting(false);
+    }
+  };
   const accentColor = getAccentColor(room.status);
   const activeLease = room.activeLease;
   const tenant = activeLease?.tenant;
   const isReserved = room.hasLease && !activeLease;
   const isVacant = room.status === 'Available' && !room.hasLease && room.activeLease === null;
   const isMaintenance = room.status === 'Maintenance';
-  const heroImage = ROOM_IMAGES[Number(room.floorId)] ?? ROOM_IMAGES[1];
   const currentRent = room.activeLease?.monthlyRent ?? room.baseRentAmount;
 
   return (
@@ -161,30 +93,15 @@ export default function RoomDetailScreen({
         >
           <View style={styles.content}>
             <View style={styles.heroShell}>
-              <ImageBackground
-                source={{ uri: heroImage }}
-                style={styles.heroImage}
-                imageStyle={styles.heroImageBorder}
-              >
-                <LinearGradient
-                  colors={[
-                    'rgba(15, 23, 42, 0.66)',
-                    'rgba(15, 23, 42, 0.1)',
-                    'rgba(15, 23, 42, 0)',
-                  ]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 0, y: 1 }}
-                  style={StyleSheet.absoluteFillObject}
-                />
-
-                <View style={[styles.heroTopBar, { paddingTop: Math.max(insets.top, 10) }]}>
+              <View style={styles.heroHeader}>
+                <View style={styles.heroTopBar}>
                   <Pressable onPress={onBack} style={styles.backButton}>
                     <Ionicons name="arrow-back" size={18} color="#0F172A" />
                   </Pressable>
 
                   <View style={styles.heroActions}>
                     <View style={[styles.floorChip, { backgroundColor: accentColor }]}>
-                      <Text style={styles.floorChipText}>{floorLabel(room.floorId)}</Text>
+                      <Text style={styles.floorChipText}>{formatFloor(room.floorId)}</Text>
                     </View>
                     <Pressable onPress={onEdit} style={styles.editButton}>
                       <Ionicons name="pencil-outline" size={18} color="#0F172A" />
@@ -202,17 +119,12 @@ export default function RoomDetailScreen({
                         : isReserved ? 'Reserved for a tenant' : activeLease ? 'Active rental unit' : 'Room unavailable'}
                   </Text>
                 </View>
-              </ImageBackground>
+              </View>
 
               <View style={styles.heroCard}>
                 <View style={styles.specRow}>
                   <SpecItem icon="layers-outline" value={room.floorId} label="Floor" />
                   <SpecItem icon="person-outline" value={activeLease ? '1' : '0'} label="Tenant" />
-                  {/* <SpecItem
-                    icon="document-text-outline"
-                    value={currentInvoice ? formatMonthYear(currentInvoice.billing_month).split(' ')[0] : 'No'}
-                    label="Invoice"
-                  /> */}
                   <View style={styles.rentBlock}>
                     <Text style={styles.rentAmount}>{formatCurrency(currentRent)}</Text>
                     <Text style={styles.rentSuffix}>/mo</Text>
@@ -256,19 +168,19 @@ export default function RoomDetailScreen({
                     <View style={styles.tenantMeta}>
                       <Text style={styles.tenantName}>{tenant?.name}</Text>
                       <Text style={styles.tenantLine}>
-                        Tenant since {formatMonthYear(activeLease.startDate)}
+                        Tenant since {formatCanonicalDateForMode(activeLease.startDate, calendarMode)}
                       </Text>
                     </View>
                     <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
                   </Pressable>
 
                   <View style={styles.tenantActions}>
-                    <Pressable style={styles.primaryAction}>
+                    <Pressable accessibilityRole="button" disabled={isContacting} onPress={() => handleContact('tel')} style={[styles.primaryAction, { opacity: isContacting ? 0.5 : 1 }]}>
                       <Ionicons name="call-outline" size={16} color="#FFFFFF" />
                       <Text style={styles.primaryActionText}>Call</Text>
                     </Pressable>
 
-                    <Pressable style={[styles.secondaryAction, { borderColor: accentColor }]}>
+                    <Pressable accessibilityRole="button" disabled={isContacting} onPress={() => handleContact('sms')} style={[styles.secondaryAction, { borderColor: accentColor, opacity: isContacting ? 0.5 : 1 }]}>
                       <Ionicons name="chatbubble-outline" size={16} color={accentColor} />
                       <Text style={[styles.secondaryActionText, { color: accentColor }]}>
                         Message
@@ -279,73 +191,12 @@ export default function RoomDetailScreen({
               )}
             </View>
 
-            <View style={styles.section}>
-              <View style={styles.sectionHeaderRow}>
-                <Text style={styles.sectionTitle}>PAYMENT HISTORY</Text>
-                <Text style={styles.floorChip}>View All</Text>
-              </View>
-
-              {/* Todo: Payment Feature */}
-              {/* <View style={styles.card}>
-                {invoiceHistory.length === 0 ? (
-                  <Text style={styles.emptyListText}>No invoices recorded for this room yet.</Text>
-                ) : (
-                  invoiceHistory.map((invoice, index) => {
-                    const tone = paymentTone(invoice.status);
-                    const payment = payments.find((item) => item.invoice_id === invoice.id) ?? null;
-
-                    return (
-                      <View
-                        key={invoice.id}
-                        style={[
-                          styles.paymentRow,
-                          index < invoiceHistory.length - 1 ? styles.paymentRowBorder : null,
-                        ]}
-                      >
-                        <View style={styles.paymentLeft}>
-                          <View style={[styles.paymentIcon, { backgroundColor: tone.iconBg }]}>
-                            <Ionicons
-                              name="document-text-outline"
-                              size={16}
-                              color={tone.iconColor}
-                            />
-                          </View>
-
-                          <View style={styles.paymentTextWrap}>
-                            <Text style={styles.paymentMonth}>
-                              {formatMonthYear(invoice.billing_month)}
-                            </Text>
-                            <Text style={styles.paymentDate}>
-                              {payment
-                                ? `Paid on ${formatShortDate(payment.paid_at)}`
-                                : invoice.due_date
-                                  ? `Due on ${formatShortDate(invoice.due_date)}`
-                                  : 'Payment not recorded yet'}
-                            </Text>
-                          </View>
-                        </View>
-
-                        <View style={styles.paymentRight}>
-                          <Text style={[styles.paymentAmount, { color: tone.amountColor }]}>
-                            {formatCurrency(invoice.total_amount)}
-                          </Text>
-                          <Badge status={tone.badge} size="sm" />
-                        </View>
-                      </View>
-                    );
-                  })
-                )}
-              </View> */}
-            </View>
           </View>
         </ScrollView>
 
         {activeLease ? (
           <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 14) }]}>
             <View style={styles.footerActions}>
-              <Pressable style={[styles.footerButton, { backgroundColor: accentColor }]}>
-                <Text style={styles.footerButtonText}>Record New Payment</Text>
-              </Pressable>
               <Pressable onPress={onEndLease} style={styles.endLeaseButton}>
                 <Ionicons name="log-out-outline" size={17} color="#B91C1C" />
                 <Text style={styles.endLeaseButtonText}>End Lease</Text>
@@ -375,12 +226,11 @@ const styles = StyleSheet.create({
   heroShell: {
     gap: 0,
   },
-  heroImage: {
-    height: 260,
-    justifyContent: 'space-between',
-  },
-  heroImageBorder: {
+  heroHeader: {
+    height: 220,
     borderRadius: 30,
+    backgroundColor: '#0D1F3C',
+    justifyContent: 'space-between',
   },
   heroTopBar: {
     flexDirection: 'row',
@@ -497,11 +347,6 @@ const styles = StyleSheet.create({
   section: {
     gap: 10,
   },
-  sectionHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
   sectionTitle: {
     color: '#0F172A',
     fontSize: 15,
@@ -594,77 +439,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
   },
-  paymentRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 14,
-  },
-  paymentRowBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#EEF2F6',
-  },
-  paymentLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    paddingRight: 12,
-  },
-  paymentIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  paymentTextWrap: {
-    marginLeft: 12,
-    flex: 1,
-  },
-  paymentMonth: {
-    color: '#0F172A',
-    fontSize: 16,
-    fontWeight: '800',
-  },
-  paymentDate: {
-    marginTop: 4,
-    color: '#94A3B8',
-    fontSize: 13,
-    fontWeight: '500',
-  },
-  paymentRight: {
-    alignItems: 'flex-end',
-    gap: 8,
-  },
-  paymentAmount: {
-    fontSize: 18,
-    fontWeight: '800',
-  },
-  emptyListText: {
-    color: '#64748B',
-    fontSize: 14,
-    lineHeight: 22,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 14,
-  },
-  infoBorder: {
-    borderTopWidth: 1,
-    borderTopColor: '#EEF2F6',
-  },
-  infoLabel: {
-    color: '#64748B',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  infoValue: {
-    color: '#0F172A',
-    fontSize: 14,
-    fontWeight: '700',
-  },
   footer: {
     position: 'absolute',
     left: 16,
@@ -672,22 +446,6 @@ const styles = StyleSheet.create({
     bottom: 0,
     backgroundColor: 'rgba(238, 242, 246, 0.96)',
     paddingTop: 12,
-  },
-  footerButton: {
-    height: 54,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#0F172A',
-    shadowOpacity: 0.12,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 3,
-  },
-  footerButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '800',
   },
   footerActions: {
     gap: 10,

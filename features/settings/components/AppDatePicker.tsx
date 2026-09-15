@@ -20,6 +20,8 @@ interface AppDatePickerProps {
   mode: CalendarMode;
   onChange: (canonicalAdDate: string) => void;
   placeholder?: string;
+  minimumDate?: string;
+  maximumDate?: string;
 }
 
 export function AppDatePicker({
@@ -27,6 +29,8 @@ export function AppDatePicker({
   mode,
   onChange,
   placeholder = 'Select date',
+  minimumDate,
+  maximumDate,
 }: AppDatePickerProps) {
   const [isAdPickerVisible, setIsAdPickerVisible] = useState(false);
 
@@ -48,6 +52,8 @@ export function AppDatePicker({
           onChange(canonicalDateFromPicker({ value: nextValue, mode: 'BS', adFromDetail: detail.ad }));
         }}
         valueFormat="BS"
+        min={minimumDate ? pickerValueFromCanonicalDate(minimumDate, 'BS') : undefined}
+        max={maximumDate ? pickerValueFromCanonicalDate(maximumDate, 'BS') : undefined}
         locale="en"
         format="YYYY MMMM DD"
         placeholder={placeholder}
@@ -86,6 +92,8 @@ export function AppDatePicker({
           <DateTimePicker
             value={dateFromCanonical(value) ?? new Date()}
             mode="date"
+            minimumDate={minimumDate ? dateFromCanonical(minimumDate) ?? undefined : undefined}
+            maximumDate={maximumDate ? dateFromCanonical(maximumDate) ?? undefined : undefined}
             display={Platform.OS === 'ios' ? 'inline' : 'default'}
             onChange={handleAdChange}
           />

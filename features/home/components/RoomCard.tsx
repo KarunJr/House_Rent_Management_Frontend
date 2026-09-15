@@ -1,3 +1,4 @@
+import { formatFloor } from '../utils/format';
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, Text, View } from 'react-native';
 // import { invoiceStatusToBadge, type RoomWithDetails } from '../home.types';
@@ -19,14 +20,6 @@ type StatusCopy = {
   iconBackground: string;
   titleColor: string;
   descriptionColor: string;
-};
-
-const floorLabel = (floorNumber: string) => {
-  if (floorNumber === '1') return '1st Floor';
-  if (floorNumber === '2') return '2nd Floor';
-  if (floorNumber === '3') return '3rd Floor';
-
-  return `${floorNumber}th Floor`;
 };
 
 const getAccentColor = (status: RoomCardDetails['status']) => {
@@ -81,7 +74,9 @@ const getStatusCopy = (room: RoomCardDetails): StatusCopy => {
     title: room.activeLease?.tenant.name ?? (room.hasLease ? 'Reserved' : 'Unavailable'),
     description: room.activeLease
       ? `Tenant since ${formatDate(room.activeLease.startDate)}`
-      : room.hasLease ? 'This room already has a lease reservation.' : 'This room is not available for a new lease.',
+      : room.hasLease
+        ? 'This room already has a lease reservation.'
+        : 'This room is not available for a new lease.',
     icon: 'person-outline',
     backgroundColor: '#F8FAFC',
     borderColor: '#E2E8F0',
@@ -149,7 +144,7 @@ export default function RoomCard({ room, onPress }: RoomCardProps) {
                   }}
                 >
                   <Text className="text-[11px] font-semibold" style={{ color: accentColor }}>
-                    {floorLabel(room.floorId)}
+                    {formatFloor(room.floorId)}
                   </Text>
                 </View>
 
@@ -230,7 +225,7 @@ export default function RoomCard({ room, onPress }: RoomCardProps) {
               style={{ backgroundColor: `${accentColor}10` }}
             >
               <Text className="text-[11px] font-medium uppercase tracking-[0.8px] text-slate-500">
-                {room.activeLease ? 'Due This Month' : 'Base Rent'}
+                {room.activeLease ? 'Monthly Rent' : 'Base Rent'}
               </Text>
 
               <Text className="mt-1 text-base font-extrabold text-slate-900">
@@ -244,7 +239,15 @@ export default function RoomCard({ room, onPress }: RoomCardProps) {
               </Text>
 
               <Text className="mt-1 text-sm font-extrabold" style={{ color: accentColor }}>
-                {isMaintenance ? 'Hold' : isVacant ? 'Open' : room.activeLease ? 'Active' : room.hasLease ? 'Reserved' : 'Unavailable'}
+                {isMaintenance
+                  ? 'Hold'
+                  : isVacant
+                    ? 'Open'
+                    : room.activeLease
+                      ? 'Active'
+                      : room.hasLease
+                        ? 'Reserved'
+                        : 'Unavailable'}
               </Text>
             </View>
           </View>

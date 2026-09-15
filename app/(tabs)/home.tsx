@@ -1,3 +1,4 @@
+import { useIsFocused } from '@react-navigation/native';
 import { Avatar } from '@/features/home/components/ui/Avatar';
 import { toast } from '@/components/toast';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -12,26 +13,22 @@ import { useEffect } from 'react';
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
+  const isFocused = useIsFocused();
   const getRooms = useRoomStore((state) => state.getRoom);
   const rooms = useRoomStore((state) => state.rooms);
   const isLoading = useRoomStore((state) => state.isLoading);
   const fetchError = useRoomStore((state) => state.fetchError);
   useEffect(() => {
-    // The store exposes request failures through fetchError for the inline retry state.
-    void getRooms().catch((error) => {
-      console.log('Room fetch failed:', {
-        message: error.message,
-        code: error.code,
-        status: error.response?.status,
-      });
-    });
-  }, [getRooms]);
+    if (!isFocused) return;
+    const controller = new AbortController();
+    // fetchError drives the existing retry UI.
+    void getRooms(controller.signal).catch(() => {});
+    return () => controller.abort();
+  }, [getRooms, isFocused]);
   const roomList = rooms ?? [];
-  console.log('Rooms:', roomList);
   const vacantRooms = roomList.filter(
     (room) => room.status === 'Available' && !room.hasLease && room.activeLease === null,
   );
-  console.log('Vacant Rooms:', vacantRooms);
   const stats = {
     totalRooms: roomList.length,
 

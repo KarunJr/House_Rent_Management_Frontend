@@ -1,7 +1,14 @@
 import * as z from 'zod';
 
-// The backend uses DateOnly and UTC today for activation and move-out checks.
-export const leaseToday = () => new Date().toISOString().slice(0, 10);
+// Use Nepal's business day regardless of the phone's timezone. Dates sent to
+// the API remain Gregorian YYYY-MM-DD, including selections made in BS mode.
+export const leaseToday = (now = new Date()) => {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Kathmandu', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).formatToParts(now);
+  const part = (type: string) => parts.find((value) => value.type === type)!.value;
+  return `${part('year')}-${part('month')}-${part('day')}`;
+};
 
 const leaseDate = z
   .string()
@@ -29,7 +36,9 @@ const selectedId = (message: string) =>
 export const CreateLeaseSchema = z.object({
   roomId: selectedId('Select a room'),
   tenantId: selectedId('Select a tenant'),
-  startDate: leaseDate,
+  startDate: leaseDate.refine((value) => value <= leaseToday(), {
+    error: 'Start date cannot be in the future',
+  }),
   monthlyRent: z.coerce
     .number()
     .positive({ error: 'Monthly rent must be greater than 0' })

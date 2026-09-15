@@ -15,6 +15,5 @@ export const getRoomApi = <T>(signal?: AbortSignal) => {
 };
 
 export const getSingleRoomApi = <T>(id: string) => {
-  console.log('Calling the actual route');
   return api.get<T>(`/v1/api/room/${id}`);
 };

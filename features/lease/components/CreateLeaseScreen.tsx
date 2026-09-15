@@ -100,11 +100,9 @@ export default function CreateLeaseScreen({
       return;
     }
     try {
-      const { lease, refreshFailed } = await createLease(data);
+      const { refreshFailed } = await createLease(data);
       toast.success(
-        lease.isActive
-          ? `${chosenTenant.name} has been assigned to Room ${chosenRoom.roomName}.`
-          : `A future lease has been saved for ${chosenTenant.name} in Room ${chosenRoom.roomName}.`,
+        `${chosenTenant.name} has been assigned to Room ${chosenRoom.roomName}.`,
         { title: 'Lease created' },
       );
       if (refreshFailed) {
@@ -266,7 +264,7 @@ export default function CreateLeaseScreen({
             <View className="gap-1.5">
               <Text className="text-sm font-semibold text-slate-700">Start Date</Text>
               <Text className="text-xs leading-5 text-slate-500">
-                Your calendar preference is set to {calendarMode}.
+                Choose today or an earlier date. Calendar preference: {calendarMode}.
               </Text>
               <Controller
                 control={control}
@@ -277,6 +275,7 @@ export default function CreateLeaseScreen({
                     mode={calendarMode}
                     onChange={onChange}
                     placeholder="Select lease start date"
+                    maximumDate={today}
                   />
                 )}
               />
@@ -289,7 +288,7 @@ export default function CreateLeaseScreen({
                     Selected: {displayedStartDate}
                   </Text>
                   <Text className="mt-1 text-xs leading-5 text-slate-500">
-                    Saved internally as an AD calendar date.
+                    The lease becomes active as soon as it is saved.
                   </Text>
                 </View>
               ) : null}
