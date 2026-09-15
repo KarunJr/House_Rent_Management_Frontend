@@ -1,3 +1,4 @@
+import { formatFloor } from '../utils/format';
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, Text, View } from 'react-native';
 // import { invoiceStatusToBadge, type RoomWithDetails } from '../home.types';
@@ -21,13 +22,7 @@ type StatusCopy = {
   descriptionColor: string;
 };
 
-const floorLabel = (floorNumber: string) => {
-  if (floorNumber === '1') return '1st Floor';
-  if (floorNumber === '2') return '2nd Floor';
-  if (floorNumber === '3') return '3rd Floor';
 
-  return `${floorNumber}th Floor`;
-};
 
 const getAccentColor = (status: RoomCardDetails['status']) => {
   switch (status) {
@@ -149,7 +144,7 @@ export default function RoomCard({ room, onPress }: RoomCardProps) {
                   }}
                 >
                   <Text className="text-[11px] font-semibold" style={{ color: accentColor }}>
-                    {floorLabel(room.floorId)}
+                    {formatFloor(room.floorId)}
                   </Text>
                 </View>
 
@@ -230,7 +225,7 @@ export default function RoomCard({ room, onPress }: RoomCardProps) {
               style={{ backgroundColor: `${accentColor}10` }}
             >
               <Text className="text-[11px] font-medium uppercase tracking-[0.8px] text-slate-500">
-                {room.activeLease ? 'Due This Month' : 'Base Rent'}
+                {room.activeLease ? 'Monthly Rent' : 'Base Rent'}
               </Text>
 
               <Text className="mt-1 text-base font-extrabold text-slate-900">

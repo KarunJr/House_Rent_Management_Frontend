@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { isAxiosError } from 'axios';
@@ -52,7 +53,10 @@ export default function AddTenantScreen({
     },
   });
 
+  const saveInProgress = useRef(false);
   const onSubmit = async (data: AddTenantFormData) => {
+    if (saveInProgress.current) return;
+    saveInProgress.current = true;
     try {
       const savedTenant = tenant ? await editTenant(tenant.id, data) : await addTenant(data);
       toast.success(`${savedTenant.name} has been ${isEditing ? 'updated' : 'created'}.`, {
@@ -81,6 +85,8 @@ export default function AddTenantScreen({
           title: 'Tenant not saved',
         },
       );
+    } finally {
+      saveInProgress.current = false;
     }
   };
 

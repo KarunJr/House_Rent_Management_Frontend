@@ -11,8 +11,10 @@ interface RoomStore {
 
   addRoom: (data: RoomFormData) => Promise<AddRoomResponse>;
   editRoom: (id: string, data: RoomFormData) => Promise<EditRoomResponse>;
-  getRoom: () => Promise<GetRoomRepsonse>;
+  getRoom: (signal?: AbortSignal) => Promise<GetRoomRepsonse>;
 }
+
+let roomRequestId = 0;
 
 export const useRoomStore = create<RoomStore>()((set) => ({
   isLoading: true,
@@ -58,27 +60,31 @@ export const useRoomStore = create<RoomStore>()((set) => ({
 
       return result;
     } catch (error) {
-      set({ isLoading: false });
       throw error;
     }
   },
 
-  getRoom: async () => {
+  getRoom: async (signal) => {
+    const requestId = ++roomRequestId;
     set({ isLoading: true, fetchError: null });
     try {
-      const response = await getRoomApi<GetRoomRepsonse>();
+      const response = await getRoomApi<GetRoomRepsonse>(signal);
       const result = response.data;
       if (result.success && result.rooms) {
-        set({ rooms: result.rooms });
+        if (!signal?.aborted && requestId === roomRequestId) {
+          set({ rooms: result.rooms });
+        }
       } else {
         throw new Error('Unable to load rooms.');
       }
       return result;
     } catch (error) {
-      set({ fetchError: 'We couldn’t load your rooms. Please try again.' });
+      if (!signal?.aborted && requestId === roomRequestId) {
+        set({ fetchError: 'We couldn’t load your rooms. Please try again.' });
+      }
       throw error;
     } finally {
-      set({ isLoading: false });
+      if (requestId === roomRequestId) set({ isLoading: false });
     }
   },
 }));
