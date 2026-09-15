@@ -145,6 +145,8 @@ export default function EndLeaseScreen({ room, activeLease, onBack, onEnded }: E
                     mode={calendarMode}
                     onChange={onChange}
                     placeholder="Select move-out date"
+                    minimumDate={activeLease.startDate}
+                    maximumDate={today}
                   />
                 )}
               />

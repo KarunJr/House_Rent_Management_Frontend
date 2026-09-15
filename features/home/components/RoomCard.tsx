@@ -22,8 +22,6 @@ type StatusCopy = {
   descriptionColor: string;
 };
 
-
-
 const getAccentColor = (status: RoomCardDetails['status']) => {
   switch (status) {
     case 'Occupied':
@@ -76,7 +74,9 @@ const getStatusCopy = (room: RoomCardDetails): StatusCopy => {
     title: room.activeLease?.tenant.name ?? (room.hasLease ? 'Reserved' : 'Unavailable'),
     description: room.activeLease
       ? `Tenant since ${formatDate(room.activeLease.startDate)}`
-      : room.hasLease ? 'This room already has a lease reservation.' : 'This room is not available for a new lease.',
+      : room.hasLease
+        ? 'This room already has a lease reservation.'
+        : 'This room is not available for a new lease.',
     icon: 'person-outline',
     backgroundColor: '#F8FAFC',
     borderColor: '#E2E8F0',
@@ -239,7 +239,15 @@ export default function RoomCard({ room, onPress }: RoomCardProps) {
               </Text>
 
               <Text className="mt-1 text-sm font-extrabold" style={{ color: accentColor }}>
-                {isMaintenance ? 'Hold' : isVacant ? 'Open' : room.activeLease ? 'Active' : room.hasLease ? 'Reserved' : 'Unavailable'}
+                {isMaintenance
+                  ? 'Hold'
+                  : isVacant
+                    ? 'Open'
+                    : room.activeLease
+                      ? 'Active'
+                      : room.hasLease
+                        ? 'Reserved'
+                        : 'Unavailable'}
               </Text>
             </View>
           </View>
